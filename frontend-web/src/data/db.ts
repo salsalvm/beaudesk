@@ -1,11 +1,13 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { isoDate } from '@/lib/format'
+import { isClosedDay, isoDate } from '@/lib/format'
 import type { Booking, Customer } from './types'
 
+/** Past demo visits, moved off closed days so seed history stays realistic. */
 const daysFromNow = (n: number) => {
   const d = new Date()
   d.setDate(d.getDate() + n)
+  while (isClosedDay(isoDate(d))) d.setDate(d.getDate() - 1)
   return isoDate(d)
 }
 

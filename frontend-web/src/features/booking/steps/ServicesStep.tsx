@@ -4,12 +4,12 @@ import { ANY_STYLIST, BRANCHES, CATEGORIES, SERVICES, STYLISTS, serviceById } fr
 import { ServicePrice, ServiceTags } from '@/features/services/ServiceTags'
 import { CATEGORY_THEME } from '@/lib/categoryTheme'
 import { SALON } from '@/lib/config'
-import { cn, initials, isoDate, minutesLabel, monthShort, timeLabel } from '@/lib/format'
+import { cn, initials, isClosedDay, isoDate, minutesLabel, monthShort, timeLabel } from '@/lib/format'
 import { useDraft } from '../draft'
 import { CATEGORY_ICON, StepFooter, StepHeading } from '../parts'
 
 function upcomingDays() {
-  const out: { iso: string; top: string; day: number; month: string }[] = []
+  const out: { iso: string; top: string; day: number; month: string; closed: boolean }[] = []
   const today = new Date()
   for (let i = 0; i < SALON.bookingDays; i++) {
     const d = new Date(today)
@@ -19,6 +19,7 @@ function upcomingDays() {
       top: i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : d.toLocaleDateString('en-GB', { weekday: 'short' }),
       day: d.getDate(),
       month: monthShort(isoDate(d)),
+      closed: isClosedDay(isoDate(d)),
     })
   }
   return out
@@ -68,7 +69,8 @@ export function ServicesStep() {
   const selected = d.serviceIds.flatMap((id) => serviceById(id) ?? [])
   const chosenCats = new Set(selected.map((s) => s.category))
   const stylists = STYLISTS.filter((s) => s.categories.some((c) => chosenCats.has(c) || (chosenCats.size === 0 && c === d.category)))
-  const timeOk = d.time && slots.some((s) => s.time === d.time && !s.past)
+  const dateClosed = !!d.date && isClosedDay(d.date)
+  const timeOk = d.time && !dateClosed && slots.some((s) => s.time === d.time && !s.past)
 
   return (
     <div>
@@ -218,29 +220,40 @@ export function ServicesStep() {
         <Panel n={3} title="Date & time">
           <div className="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:-mx-5 sm:px-5">
             {days.map((day) => {
-              const on = d.date === day.iso
+              const on = d.date === day.iso && !day.closed
               return (
                 <button
                   key={day.iso}
+                  disabled={day.closed}
                   onClick={() => d.set({ date: day.iso })}
                   aria-pressed={on}
+                  aria-label={day.closed ? `${day.top} ${day.day} ${day.month}, closed` : undefined}
                   className={cn(
                     'flex w-[62px] shrink-0 flex-col items-center rounded-2xl border py-2 transition',
-                    on ? 'border-wine-700 bg-wine-700 text-white shadow-soft' : 'border-wine-100 bg-white text-wine-950 hover:border-wine-200',
+                    day.closed
+                      ? 'cursor-not-allowed border-dashed border-stone-200 bg-stone-50 text-stone-300'
+                      : on
+                        ? 'border-wine-700 bg-wine-700 text-white shadow-soft'
+                        : 'border-wine-100 bg-white text-wine-950 hover:border-wine-200',
                   )}
                 >
-                  <span className={cn('text-[11px] font-semibold', on ? 'text-wine-100' : 'text-stone-500')}>{day.top}</span>
+                  <span className={cn('text-[11px] font-semibold', day.closed ? 'text-stone-400' : on ? 'text-wine-100' : 'text-stone-500')}>{day.top}</span>
                   <span className="text-lg font-extrabold leading-tight">{day.day}</span>
-                  <span className={cn('text-[10px] font-bold uppercase', on ? 'text-sun-300' : 'text-wine-600')}>{day.month}</span>
+                  <span className={cn('text-[10px] font-bold uppercase', day.closed ? 'text-red-400' : on ? 'text-sun-300' : 'text-wine-600')}>
+                    {day.closed ? 'Closed' : day.month}
+                  </span>
                 </button>
               )
             })}
           </div>
 
-          {!d.date ? (
+          <p className="mt-2 text-xs text-stone-500">
+            Open {SALON.openDaysLabel} · closed on {SALON.closedDaysLabel}
+          </p>
+          {!d.date || dateClosed ? (
             <div className="mt-4 flex items-center gap-3 rounded-2xl border border-dashed border-wine-200 bg-wine-50/40 px-4 py-5 text-sm text-stone-500">
               <CalendarDays className="size-5 shrink-0 text-wine-600" />
-              Pick a date above to see available times.
+              {dateClosed ? `We're closed on ${SALON.closedDaysLabel} — pick another day.` : 'Pick a date above to see available times.'}
             </div>
           ) : (
             <div className="mt-5 space-y-4">

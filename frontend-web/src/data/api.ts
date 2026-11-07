@@ -4,6 +4,7 @@
  * when swapping in real HTTP calls.
  */
 import { SALON } from '@/lib/config'
+import { isClosedDay } from '@/lib/format'
 import { categoryById, serviceById } from './catalog'
 import { useDb } from './db'
 import type { Booking, Customer, PaymentMethod } from './types'
@@ -68,6 +69,7 @@ export async function createBooking(
   const customer = db.customers.find((c) => c.id === customerId)
   if (!customer) throw new Error('Customer not found')
   if (!draft.date || !draft.time || draft.serviceIds.length === 0) throw new Error('Booking is incomplete')
+  if (isClosedDay(draft.date)) throw new Error(`The salon is closed on ${SALON.closedDaysLabel}. Please pick another day.`)
 
   const summary = summarize(draft, customer)
   const split = paymentSplit(summary.total, draft)

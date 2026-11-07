@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
-import { Brush, Check, Flower2, Hand, Scissors } from 'lucide-react'
+import { createPortal } from 'react-dom'
+import { Brush, Check, ChevronLeft, Flower2, Hand, Scissors } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { ANY_STYLIST, branchById, stylistById, type CategoryId } from '@/data/catalog'
 import { useDb } from '@/data/db'
@@ -91,28 +92,40 @@ export function StepFooter({
   total?: { label: string; value: string }
 }) {
   const summary = useSummary()
+  // Portalled: the animated step wrapper has a transform, which would trap `position: fixed`.
+  const mobileBar = (
+    <div className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-wine-100 bg-white/95 px-4 pt-3 shadow-[0_-10px_30px_-18px_rgb(43_10_22/0.35)] backdrop-blur lg:hidden">
+      <div className="mx-auto flex max-w-xl items-center gap-2.5 pb-3">
+        {secondary && (
+          <Button variant="outline" size="lg" onClick={onSecondary} aria-label={secondary} className="w-14 shrink-0 px-0!">
+            <ChevronLeft className="size-5" />
+          </Button>
+        )}
+        {showTotal && (
+          <div className="min-w-0 shrink-0 pr-1">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-stone-400">{total?.label ?? 'Total'}</div>
+            <div className="whitespace-nowrap text-lg font-bold leading-tight text-wine-950">{total?.value ?? money(summary.total)}</div>
+          </div>
+        )}
+        <Button size="lg" onClick={onPrimary} disabled={disabled} loading={loading} className="min-w-0 flex-1 whitespace-nowrap px-4!">
+          {primary}
+        </Button>
+      </div>
+    </div>
+  )
   return (
     <>
       <div className="h-28 lg:hidden" />
-      <div className="pb-safe fixed inset-x-0 bottom-0 z-20 border-t border-wine-100 bg-white/95 px-4 pt-3 backdrop-blur lg:static lg:mt-8 lg:border-0 lg:bg-transparent lg:p-0">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 pb-3 lg:pb-0">
-          {showTotal && (
-            <div className="min-w-0 lg:hidden">
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-stone-400">{total?.label ?? 'Total'}</div>
-              <div className="text-lg font-bold text-wine-950">{total?.value ?? money(summary.total)}</div>
-            </div>
-          )}
-          <div className="ml-auto flex flex-1 items-center justify-end gap-2.5 lg:flex-none">
-            {secondary && (
-              <Button variant="outline" size="lg" onClick={onSecondary} className="px-4 sm:px-6">
-                {secondary}
-              </Button>
-            )}
-            <Button size="lg" onClick={onPrimary} disabled={disabled} loading={loading} className="flex-1 sm:min-w-56 lg:flex-none">
-              {primary}
-            </Button>
-          </div>
-        </div>
+      {typeof document !== 'undefined' && createPortal(mobileBar, document.body)}
+      <div className="mt-8 hidden items-center justify-end gap-2.5 lg:flex">
+        {secondary && (
+          <Button variant="outline" size="lg" onClick={onSecondary} className="px-6">
+            {secondary}
+          </Button>
+        )}
+        <Button size="lg" onClick={onPrimary} disabled={disabled} loading={loading} className="min-w-56">
+          {primary}
+        </Button>
       </div>
     </>
   )

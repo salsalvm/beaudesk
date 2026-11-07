@@ -5,7 +5,7 @@ import { BRANCHES } from '@/data/catalog'
 import { useCurrentCustomer, useDb } from '@/data/db'
 import { useDraft } from '@/features/booking/draft'
 import { SALON } from '@/lib/config'
-import { formatPhone, hourLabel, initials, cn } from '@/lib/format'
+import { formatPhone, hoursLabel, initials, cn } from '@/lib/format'
 import { TokenModalHost } from '@/features/token/TokenModal'
 import { useEffect, useRef, useState } from 'react'
 
@@ -29,7 +29,7 @@ export function AppShell() {
     <div className="min-h-dvh">
       <header className="sticky top-0 z-30 px-3 pt-3 sm:px-6 sm:pt-4">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 rounded-[22px] border border-white/60 bg-white/85 px-4 shadow-soft backdrop-blur-md sm:px-6">
-          <NavLink to="/" aria-label="BeauDesk home">
+          <NavLink to="/" aria-label="BeauDesk home" className="flex h-11 items-center">
             <Logo />
           </NavLink>
           <span className="hidden h-7 w-px bg-wine-100 md:block" />
@@ -196,25 +196,26 @@ function MenuLink({ to, icon, label }: { to: string; icon: React.ReactNode; labe
 }
 
 function Footer() {
-  const hours = `${hourLabel(SALON.openHour)} – ${hourLabel(SALON.closeHour)}`
+  const hours = hoursLabel()
   return (
     <footer className="bg-wine-950 pb-24 text-wine-100 md:pb-0">
-      <div className="mx-auto grid max-w-6xl gap-10 px-5 py-12 sm:px-6 md:grid-cols-[1.4fr_1fr_1.2fr]">
+      <div className="mx-auto grid max-w-6xl gap-8 px-5 py-10 sm:px-6 md:grid-cols-[1.4fr_1fr_1.2fr] md:gap-10 md:py-12">
         <div>
           <Logo light />
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-wine-200">
             Book hair, nails, skin and makeup appointments in a minute and get your visit token on WhatsApp.
           </p>
           <p className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1.5 text-xs font-semibold text-white ring-1 ring-white/10">
-            <Clock className="size-3.5 text-sun-400" /> Open daily · {hours}
+            <Clock className="size-3.5 text-sun-400" /> {hours}
           </p>
+          <p className="mt-2 text-xs text-wine-300">Closed on {SALON.closedDaysLabel}</p>
         </div>
         <nav aria-label="Footer">
           <h3 className="text-xs font-bold uppercase tracking-[0.1em] text-sun-400">Explore</h3>
-          <ul className="mt-4 space-y-2.5 text-sm">
+          <ul className="mt-3 grid grid-cols-2 gap-x-4 text-sm md:grid-cols-1">
             {[...NAV, { to: '/book', label: 'Book an appointment' }].map((item) => (
               <li key={item.to}>
-                <Link to={item.to} className="transition hover:text-white">
+                <Link to={item.to} className="inline-block py-2 transition hover:text-white">
                   {item.label}
                 </Link>
               </li>

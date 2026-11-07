@@ -42,7 +42,7 @@ import { activePackages, remaining } from '@/features/booking/pricing'
 import { useTokenModal } from '@/features/token/TokenModal'
 import { CATEGORY_THEME, categoryOfToken } from '@/lib/categoryTheme'
 import { SALON } from '@/lib/config'
-import { appointmentLabel, cn, dayLabel, hourLabel, isoDate, minutesLabel, money, timeLabel } from '@/lib/format'
+import { appointmentLabel, cn, dayLabel, hourLabel, hoursLabel, isClosedDay, isoDate, minutesLabel, money, timeLabel } from '@/lib/format'
 
 const HOURS = `${hourLabel(SALON.openHour)} – ${hourLabel(SALON.closeHour)}`
 
@@ -69,16 +69,32 @@ export function HomePage() {
   )
 }
 
+function nextOpening(now: Date) {
+  if (!isClosedDay(isoDate(now)) && now.getHours() < SALON.openHour) return hourLabel(SALON.openHour)
+  const d = new Date(now)
+  for (let i = 1; i <= 7; i++) {
+    d.setDate(d.getDate() + 1)
+    if (isClosedDay(isoDate(d))) continue
+    const when = i === 1 ? 'tomorrow' : d.toLocaleDateString('en-GB', { weekday: 'short' })
+    return `${when} ${hourLabel(SALON.openHour)}`
+  }
+  return hourLabel(SALON.openHour)
+}
+
 function OpenStatus() {
-  const hour = new Date().getHours()
-  const open = hour >= SALON.openHour && hour < SALON.closeHour
+  const now = new Date()
+  const hour = now.getHours()
+  const closedToday = isClosedDay(isoDate(now))
+  const open = !closedToday && hour >= SALON.openHour && hour < SALON.closeHour
   return (
     <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white ring-1 ring-white/15 backdrop-blur">
       <span className={cn('relative flex size-2', open ? 'text-emerald-400' : 'text-sun-400')}>
         {open && <span className="absolute inset-0 animate-ping rounded-full bg-current opacity-60" />}
         <span className="relative size-2 rounded-full bg-current" />
       </span>
-      {open ? `Open now · until ${hourLabel(SALON.closeHour)}` : `Closed now · opens ${hourLabel(SALON.openHour)}`}
+      {open
+        ? `Open now · until ${hourLabel(SALON.closeHour)}`
+        : `${closedToday ? 'Closed today' : 'Closed now'} · opens ${nextOpening(now)}`}
     </span>
   )
 }
@@ -86,8 +102,8 @@ function OpenStatus() {
 function Hero() {
   const facts = [
     { icon: Store, label: `${BRANCHES.length} branches`, sub: 'Doha & Lusail' },
-    { icon: Sparkles, label: `${SERVICES.length} services`, sub: 'Hair, nails, skin & makeup' },
-    { icon: Clock, label: 'Open daily', sub: HOURS },
+    { icon: Sparkles, label: `${SERVICES.length} services`, sub: `${CATEGORIES.length} categories` },
+    { icon: Clock, label: SALON.openDaysLabel, sub: HOURS },
   ]
   return (
     <section className="relative overflow-hidden rounded-[32px] bg-wine-950 text-white">
@@ -101,25 +117,28 @@ function Hero() {
       <span className="absolute -left-24 -top-28 size-80 rounded-full bg-wine-600/40 blur-3xl" />
       <span className="absolute right-[38%] top-10 hidden size-5 rounded-full bg-sun-400 md:block" />
 
-      <div className="relative max-w-2xl px-6 pb-28 pt-9 sm:px-10 sm:pb-32 sm:pt-12">
+      <div className="relative max-w-2xl px-5 pb-24 pt-7 sm:px-10 sm:pb-32 sm:pt-12">
         <OpenStatus />
-        <h1 className="mt-5 text-[36px] font-extrabold leading-[1.04] tracking-tight sm:text-[54px]">
+        <h1 className="mt-4 text-[31px] font-extrabold leading-[1.06] tracking-tight min-[400px]:text-[34px] sm:mt-5 sm:text-[54px]">
           Your salon visit,
           <br />
           <span className="text-sun-400">booked in a minute.</span>
         </h1>
-        <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-wine-100 sm:text-[17px]">
+        <p className="mt-3 max-w-lg text-[14px] leading-relaxed text-wine-100 sm:mt-4 sm:text-[17px]">
           Pick your treatments, choose a time and get your visit token on WhatsApp. Walk in, show it at reception and relax.
         </p>
-        <ul className="mt-7 grid max-w-xl gap-4 sm:grid-cols-3">
+        <ul className="mt-5 grid max-w-xl grid-cols-3 gap-2 sm:mt-7 sm:gap-4">
           {facts.map(({ icon: Icon, label, sub }) => (
-            <li key={label} className="flex items-start gap-3">
-              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-white/10 text-sun-400 ring-1 ring-white/15">
-                <Icon className="size-[18px]" />
+            <li
+              key={label}
+              className="flex min-w-0 flex-col gap-2 rounded-2xl bg-white/[0.06] p-2.5 ring-1 ring-white/10 sm:flex-row sm:items-start sm:gap-3 sm:bg-transparent sm:p-0 sm:ring-0"
+            >
+              <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-white/10 text-sun-400 ring-1 ring-white/15 sm:size-9">
+                <Icon className="size-4 sm:size-[18px]" />
               </span>
               <span className="min-w-0">
-                <span className="block text-sm font-bold">{label}</span>
-                <span className="block truncate text-xs text-wine-200">{sub}</span>
+                <span className="block truncate text-[13px] font-bold sm:text-sm">{label}</span>
+                <span className="block truncate text-[11px] text-wine-200 sm:text-xs">{sub}</span>
               </span>
             </li>
           ))}
@@ -154,11 +173,11 @@ function GenerateTokenCard() {
   )
   const nowHour = new Date().getHours()
   const isPast = (day: string, t: string) => day === days[0] && Number(t.slice(0, 2)) <= nowHour
-  const firstOpen = (day: string) => TIMES.find((t) => !isPast(day, t))
+  const firstOpen = (day: string) => (isClosedDay(day) ? undefined : TIMES.find((t) => !isPast(day, t)))
 
   const [category, setCategory] = useState<CategoryId>('hair')
   const [serviceIds, setServiceIds] = useState<string[]>([])
-  const [date, setDate] = useState(() => (firstOpen(days[0]) ? days[0] : days[1]))
+  const [date, setDate] = useState(() => days.find((d) => firstOpen(d)) ?? days[0])
   const [time, setTime] = useState(() => firstOpen(date)!)
 
   const services = SERVICES.filter((s) => s.category === category)
@@ -271,7 +290,7 @@ function GenerateTokenCard() {
               >
                 Services
               </StepLabel>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                 {services.map((s) => {
                   const on = serviceIds.includes(s.id)
                   const theme = CATEGORY_THEME[s.category]
@@ -282,20 +301,24 @@ function GenerateTokenCard() {
                       onClick={() => toggle(s.id)}
                       aria-pressed={on}
                       className={cn(
-                        'inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-[13px] font-semibold transition',
+                        'flex min-h-[54px] min-w-0 items-center gap-2.5 rounded-xl border px-3 py-2 text-left text-[13px] font-semibold transition sm:min-h-0 sm:h-10 sm:gap-2 sm:py-0',
                         on ? cn(theme.soft, theme.border, theme.ring, 'ring-2') : 'border-wine-100 bg-white text-wine-950 hover:border-wine-300',
                       )}
                     >
                       <span
                         className={cn(
-                          'grid size-4 place-items-center rounded-[5px] border transition',
+                          'grid size-4 shrink-0 place-items-center rounded-[5px] border transition',
                           on ? cn(theme.solid, theme.border) : 'border-wine-200 text-transparent',
                         )}
                       >
                         <Check className="size-3" strokeWidth={3.5} />
                       </span>
-                      {s.name}
-                      <span className={cn('font-medium', on ? theme.text : 'text-stone-400')}>{money(servicePrice(s))}</span>
+                      <span className="flex min-w-0 flex-col sm:flex-row sm:items-center sm:gap-2">
+                        <span className="leading-tight sm:whitespace-nowrap">{s.name}</span>
+                        <span className={cn('mt-0.5 text-[12px] font-medium sm:mt-0 sm:text-[13px]', on ? theme.text : 'text-stone-400')}>
+                          {money(servicePrice(s))}
+                        </span>
+                      </span>
                     </button>
                   )
                 })}
@@ -315,6 +338,7 @@ function GenerateTokenCard() {
                 const [weekday, rest] = dayLabel(d).split(', ')
                 const [dayNum, month] = rest.split(' ')
                 const on = d === date
+                const holiday = isClosedDay(d)
                 const closed = !firstOpen(d)
                 return (
                   <button
@@ -323,16 +347,23 @@ function GenerateTokenCard() {
                     disabled={closed}
                     onClick={() => pickDate(d)}
                     aria-pressed={on}
+                    aria-label={holiday ? `${weekday} ${Number(dayNum)} ${month}, closed` : undefined}
                     className={cn(
-                      'flex w-[58px] shrink-0 flex-col items-center rounded-xl border py-1.5 transition disabled:opacity-35',
-                      on ? 'border-wine-700 bg-wine-700 text-white' : 'border-wine-100 bg-white text-wine-950 hover:border-wine-300',
+                      'flex w-[58px] shrink-0 flex-col items-center rounded-xl border py-1.5 transition',
+                      holiday
+                        ? 'cursor-not-allowed border-dashed border-stone-200 bg-stone-50 text-stone-300'
+                        : on
+                          ? 'border-wine-700 bg-wine-700 text-white'
+                          : 'border-wine-100 bg-white text-wine-950 hover:border-wine-300 disabled:opacity-35',
                     )}
                   >
-                    <span className={cn('text-[11px] font-medium', on ? 'text-wine-100' : 'text-stone-500')}>
+                    <span className={cn('text-[11px] font-medium', holiday ? 'text-stone-400' : on ? 'text-wine-100' : 'text-stone-500')}>
                       {i === 0 ? 'Today' : weekday}
                     </span>
                     <span className="text-lg font-extrabold leading-tight">{Number(dayNum)}</span>
-                    <span className={cn('text-[10px] font-semibold uppercase', on ? 'text-sun-300' : 'text-wine-600')}>{month}</span>
+                    <span className={cn('text-[10px] font-semibold uppercase', holiday ? 'font-bold text-red-400' : on ? 'text-sun-300' : 'text-wine-600')}>
+                      {holiday ? 'Closed' : month}
+                    </span>
                   </button>
                 )
               })}
@@ -373,7 +404,10 @@ function GenerateTokenCard() {
             >
               {selected.length === 0 ? (
                 <div className="grid h-full min-h-28 place-items-center rounded-2xl border border-dashed border-cream-200 bg-white/60 p-4 text-center text-sm text-stone-500">
-                  No services yet — tap one or more on the left.
+                  <span>
+                    No services yet — tap one or more <span className="lg:hidden">above</span>
+                    <span className="hidden lg:inline">on the left</span>.
+                  </span>
                 </div>
               ) : (
                 <ul className="space-y-2 pr-1">
@@ -455,13 +489,18 @@ function HowItWorks() {
       <SectionHead eyebrow="How it works" title="Three steps to your appointment" />
       <ol className="grid gap-3 md:grid-cols-3">
         {steps.map(({ icon: Icon, title, text }, i) => (
-          <li key={title} className="relative overflow-hidden rounded-3xl border border-wine-100 bg-white p-5 shadow-soft">
-            <span className="absolute -right-2 -top-5 text-[88px] font-extrabold leading-none text-wine-50">{i + 1}</span>
-            <IconTile className="relative">
+          <li
+            key={title}
+            className="relative flex items-start gap-4 overflow-hidden rounded-3xl border border-wine-100 bg-white p-4 shadow-soft md:block md:p-5"
+          >
+            <span className="absolute -right-1 -top-3 text-[64px] font-extrabold leading-none text-wine-50 md:-right-2 md:-top-5 md:text-[88px]">{i + 1}</span>
+            <IconTile className="relative shrink-0">
               <Icon className="size-5" />
             </IconTile>
-            <h3 className="relative mt-4 font-bold text-wine-950">{title}</h3>
-            <p className="relative mt-1 text-sm leading-relaxed text-stone-500">{text}</p>
+            <div className="relative min-w-0 pr-6 md:pr-0">
+              <h3 className="font-bold text-wine-950 md:mt-4">{title}</h3>
+              <p className="mt-1 text-sm leading-relaxed text-stone-500">{text}</p>
+            </div>
           </li>
         ))}
       </ol>
@@ -497,7 +536,9 @@ function Categories() {
                 </span>
                 <span className="mt-3 block text-lg font-bold sm:text-xl">{c.name}</span>
                 <span className="block text-xs text-wine-100 sm:text-sm">
-                  {list.length} services · from {money(from)}
+                  <span className="block sm:inline">{list.length} services</span>
+                  <span className="hidden sm:inline"> · </span>
+                  <span className="block font-semibold text-sun-300 sm:inline sm:font-normal sm:text-wine-100">from {money(from)}</span>
                 </span>
                 <span className="mt-2 hidden items-center gap-1 text-sm font-semibold text-sun-300 transition group-hover:gap-2 sm:inline-flex">
                   Book {c.name.toLowerCase()} <ArrowRight className="size-4" />
@@ -571,7 +612,7 @@ function YourBeauDesk() {
 function Branches() {
   return (
     <section>
-      <SectionHead eyebrow="Visit us" title="Our branches" text={`Open daily, ${HOURS}. Book at any branch and show your token at reception.`} />
+      <SectionHead eyebrow="Visit us" title="Our branches" text={`Open ${SALON.openDaysLabel}, ${HOURS} · closed on ${SALON.closedDaysLabel}. Book at any branch and show your token at reception.`} />
       <div className="grid gap-3 md:grid-cols-3">
         {BRANCHES.map((b) => (
           <div key={b.id} className="flex flex-col rounded-3xl border border-wine-100 bg-white p-5 shadow-soft">
@@ -585,8 +626,9 @@ function Branches() {
               </div>
             </div>
             <p className="mt-4 flex items-center gap-2 text-sm text-wine-950">
-              <Clock className="size-4 text-wine-700" /> {HOURS}
+              <Clock className="size-4 text-wine-700" /> {hoursLabel()}
             </p>
+            <p className="mt-1 pl-6 text-xs font-semibold text-red-500">Closed on {SALON.closedDaysLabel}</p>
             <div className="mt-5 flex gap-2">
               <Link
                 to={`/book?branch=${b.id}`}

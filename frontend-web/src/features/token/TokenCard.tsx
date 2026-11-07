@@ -33,15 +33,18 @@ export const TokenCard = forwardRef<HTMLDivElement, { booking: Booking; classNam
         <span className="pointer-events-none absolute -right-24 -top-28 size-[340px] rounded-full bg-sun-100/80" />
         <span className="pointer-events-none absolute -bottom-12 -right-10 size-32 rounded-full bg-sun-200/70" />
 
-        <div className="relative px-6 pb-6 pt-6 @lg:px-8 @lg:pt-7">
+        <div className="relative px-5 pb-6 pt-5 @sm:px-6 @sm:pt-6 @lg:px-8 @lg:pt-7">
           <div className="flex items-center justify-between gap-3">
-            <span className="flex items-center gap-2.5">
-              <span className="text-[13px] font-semibold uppercase tracking-[0.06em] text-wine-900/60">Your visit token</span>
-              <span className={cn('rounded-full px-2.5 py-0.5 text-[12px] font-bold', theme.solid)}>{category.name}</span>
+            <span className="flex min-w-0 items-center gap-2">
+              <span className="whitespace-nowrap text-[12px] font-semibold uppercase tracking-[0.06em] text-wine-900/60 @sm:text-[13px]">
+                Your visit token
+              </span>
+              <span className={cn('shrink-0 rounded-full px-2.5 py-0.5 text-[12px] font-bold', theme.solid)}>{category.name}</span>
             </span>
-            <span className="inline-flex items-center gap-2 rounded-full bg-wine-50 px-3.5 py-1.5 text-[12px] font-bold uppercase tracking-wide text-wine-700 ring-1 ring-wine-100">
+            <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-wine-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-wine-700 ring-1 ring-wine-100 @sm:gap-2 @sm:px-3.5 @sm:py-1.5 @sm:text-[12px]">
               <span className="size-2 rounded-full bg-wine-600" />
-              Ready to show
+              <span className="@md:hidden">Ready</span>
+              <span className="hidden @md:inline">Ready to show</span>
             </span>
           </div>
 
@@ -66,10 +69,10 @@ export const TokenCard = forwardRef<HTMLDivElement, { booking: Booking; classNam
         <div className="relative h-6">
           <span className="absolute -left-3 top-0 size-6 rounded-full border border-cream-200" style={{ background: notchColor }} />
           <span className="absolute -right-3 top-0 size-6 rounded-full border border-cream-200" style={{ background: notchColor }} />
-          <span className="absolute inset-x-6 top-1/2 border-t-[3px] border-dashed border-wine-900/15" />
+          <span className="absolute inset-x-5 top-1/2 border-t-[3px] border-dashed border-wine-900/15" />
         </div>
 
-        <div className="relative grid grid-cols-1 gap-4 px-6 pb-7 pt-4 @xl:grid-cols-[1fr_auto_1fr] @xl:gap-6 @lg:px-8">
+        <div className="relative grid grid-cols-1 gap-4 px-5 pb-6 pt-4 @sm:px-6 @sm:pb-7 @xl:grid-cols-[1fr_auto_1fr] @xl:gap-6 @lg:px-8">
           <Fact icon={<Clock className="size-[18px]" />} label="Appointment" value={f.when} />
           <span className="hidden w-px self-stretch bg-wine-900/12 @xl:block" />
           <Fact icon={<Sparkles className="size-[18px]" />} label="Salon & stylist" value={`${f.branch} · ${f.stylist}`} />

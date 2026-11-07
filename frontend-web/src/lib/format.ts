@@ -53,6 +53,14 @@ export function isoDate(d: Date) {
   return `${y}-${m}-${day}`
 }
 
+export function isClosedDay(iso: string) {
+  return SALON.closedWeekdays.includes(new Date(`${iso.slice(0, 10)}T00:00:00`).getDay())
+}
+
+export function hoursLabel() {
+  return `${SALON.openDaysLabel} · ${hourLabel(SALON.openHour)} – ${hourLabel(SALON.closeHour)}`
+}
+
 export function initials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean)
   if (parts.length === 0) return 'BD'

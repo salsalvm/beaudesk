@@ -20,8 +20,8 @@ export function ServicesPage() {
           <p className="text-xs font-bold uppercase tracking-[0.1em] text-wine-600">Menu</p>
           <h1 className="mt-1 text-[30px] font-extrabold tracking-tight text-wine-950 sm:text-[36px]">Services & prices</h1>
           <p className="mt-1 max-w-xl text-stone-500">
-            {SERVICES.length} treatments across hair, nails, skin and makeup. Prices in {SALON.currency}, open daily{' '}
-            {hourLabel(SALON.openHour)} – {hourLabel(SALON.closeHour)}.
+            {SERVICES.length} treatments across hair, nails, skin and makeup. Prices in {SALON.currency}. Open {SALON.openDaysLabel},{' '}
+            {hourLabel(SALON.openHour)} – {hourLabel(SALON.closeHour)} · closed on {SALON.closedDaysLabel}.
           </p>
         </div>
         <label className="relative w-full sm:w-72">

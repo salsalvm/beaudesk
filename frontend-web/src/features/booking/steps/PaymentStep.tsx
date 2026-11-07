@@ -339,11 +339,11 @@ function Choice({ on, icon, title, note, onClick }: { on: boolean; icon: React.R
 
 function Legend({ dot, label, value }: { dot: string; label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-white px-2.5 py-2 ring-1 ring-wine-100">
-      <span className="flex items-center gap-1.5 text-stone-500">
-        <span className={cn('size-2 rounded-full', dot)} /> {label}
+    <div className="min-w-0 rounded-xl bg-white px-2 py-2 ring-1 ring-wine-100 sm:px-2.5">
+      <span className="flex items-center gap-1.5 whitespace-nowrap text-[11px] text-stone-500 sm:text-xs">
+        <span className={cn('size-2 shrink-0 rounded-full', dot)} /> {label}
       </span>
-      <span className="mt-0.5 block text-sm font-bold text-wine-950">{value}</span>
+      <span className="mt-0.5 block whitespace-nowrap text-[13px] font-bold text-wine-950 sm:text-sm">{value}</span>
     </div>
   )
 }

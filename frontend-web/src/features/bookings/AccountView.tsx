@@ -202,22 +202,32 @@ function UpcomingList({ items }: { items: Booking[] }) {
           <button
             key={b.id}
             onClick={() => show(b.id)}
-            className="flex items-center gap-4 rounded-3xl border border-wine-100 bg-white p-4 text-left shadow-soft transition hover:-translate-y-0.5 hover:border-wine-200"
+            className="flex min-w-0 items-start gap-3.5 rounded-3xl border border-wine-100 bg-white p-4 text-left shadow-soft transition hover:-translate-y-0.5 hover:border-wine-200 sm:items-center sm:gap-4"
           >
-            <span className={cn('grid w-20 shrink-0 place-items-center rounded-2xl py-3 ring-1', theme.soft, theme.ring)}>
+            <span className={cn('grid w-[72px] shrink-0 place-items-center rounded-2xl py-3 ring-1 sm:w-20', theme.soft, theme.ring)}>
               <span className="text-[10px] font-semibold uppercase tracking-wide opacity-70">Token</span>
-              <span className="text-xl font-extrabold">{b.token}</span>
+              <span className="text-lg font-extrabold sm:text-xl">{b.token}</span>
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate font-bold text-wine-950">{b.services.map((s) => s.name).join(' · ')}</span>
+              <span className="flex items-start justify-between gap-2">
+                <span className="line-clamp-2 min-w-0 font-bold leading-snug text-wine-950 sm:truncate">{b.services.map((s) => s.name).join(' · ')}</span>
+                <span className="shrink-0 sm:hidden">
+                  <Badge tone="sun">Confirmed</Badge>
+                </span>
+              </span>
               <span className="mt-0.5 flex items-center gap-1.5 text-sm text-stone-500">
-                <Clock className="size-3.5" /> {appointmentLabel(b.date, b.time)}
+                <Clock className="size-3.5 shrink-0" /> <span className="truncate">{appointmentLabel(b.date, b.time)}</span>
               </span>
               <span className="flex items-center gap-1.5 text-sm text-stone-500">
-                <MapPin className="size-3.5" /> {branchById(b.branchId)?.name}
+                <MapPin className="size-3.5 shrink-0" /> {branchById(b.branchId)?.name}
+              </span>
+              <span className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs font-semibold sm:hidden">
+                <span className="text-sm text-wine-950">{b.total ? money(b.total) : 'Package'}</span>
+                {b.payAtSalon > 0 && <span className="text-sun-600">{money(b.payAtSalon)} at salon</span>}
+                {b.dueKept > 0 && <span className="text-wine-600">{money(b.dueKept)} due</span>}
               </span>
             </span>
-            <span className="flex flex-col items-end gap-1.5">
+            <span className="hidden shrink-0 flex-col items-end gap-1.5 sm:flex">
               <Badge tone="sun">Confirmed</Badge>
               <span className="text-sm font-semibold text-wine-950">{b.total ? money(b.total) : 'Package'}</span>
               {b.payAtSalon > 0 && <span className="text-xs font-semibold text-sun-600">{money(b.payAtSalon)} at salon</span>}
@@ -421,7 +431,7 @@ function PackageList({ customer }: { customer: Customer }) {
             {status === 'Active' && plan && (
               <button
                 onClick={() => navigate(`/book?service=${plan.serviceId}`)}
-                className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-wine-700 hover:gap-2"
+                className="-mx-3 mt-2 inline-flex h-11 items-center gap-1 rounded-xl px-3 text-sm font-semibold text-wine-700 transition hover:gap-2 hover:bg-wine-50"
               >
                 Book a session <ChevronRight className="size-4" />
               </button>

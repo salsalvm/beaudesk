@@ -36,8 +36,8 @@ export function TokenModalHost() {
 function Amount({ label, value, tone }: { label: string; value: number; tone: string }) {
   return (
     <div className={cn('rounded-xl px-2 py-2.5', value > 0 ? tone : 'bg-stone-50 text-stone-400')}>
-      <p className="text-[11px] font-semibold uppercase tracking-wide opacity-75">{label}</p>
-      <p className="mt-0.5 text-[15px] font-extrabold">{money(value)}</p>
+      <p className="whitespace-nowrap text-[10px] font-semibold uppercase tracking-wide opacity-75 sm:text-[11px]">{label}</p>
+      <p className="mt-0.5 whitespace-nowrap text-[14px] font-extrabold sm:text-[15px]">{money(value)}</p>
     </div>
   )
 }
@@ -84,8 +84,8 @@ function TokenWindow({ booking, justBooked, onClose }: { booking: Booking; justB
   return (
     <div className="relative">
       <div className="relative overflow-hidden rounded-t-[28px] bg-wine-50">
-        <div className="relative grid grid-cols-[1fr_auto]">
-          <div className="flex items-start gap-4 px-5 pb-12 pt-6 sm:gap-5 sm:px-7 sm:pt-9">
+        <div className="relative grid grid-cols-[minmax(0,1fr)_auto]">
+          <div className="flex items-start gap-3.5 pb-12 pl-5 pt-6 pr-16 sm:gap-5 sm:px-7 sm:pt-9">
             <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-sun-400 text-xl font-extrabold text-wine-950 sm:size-[68px] sm:text-2xl">
               {initials(booking.customerName)}
             </span>
@@ -110,11 +110,11 @@ function TokenWindow({ booking, justBooked, onClose }: { booking: Booking; justB
       </div>
 
       <div className="space-y-4 px-4 pb-6 pt-5 sm:px-7">
-        <div className="flex items-center gap-4 rounded-2xl border border-wine-100 bg-wine-50/60 px-4 py-3.5">
-          <span className="grid size-11 shrink-0 place-items-center rounded-full bg-wine-100 text-wine-700">
-            <Check className="size-6" strokeWidth={3} />
+        <div className="flex items-center gap-3.5 rounded-2xl border border-wine-100 bg-wine-50/60 px-4 py-3.5">
+          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-wine-100 text-wine-700 sm:size-11">
+            <Check className="size-5 sm:size-6" strokeWidth={3} />
           </span>
-          <div>
+          <div className="min-w-0">
             <p className="text-[15px] font-semibold text-wine-950 sm:text-[16px]">Show token {booking.token} at the reception desk.</p>
             <p className="mt-0.5 text-[13px] text-stone-500">We'll call you when your stylist is ready.</p>
           </div>
@@ -152,11 +152,11 @@ function TokenWindow({ booking, justBooked, onClose }: { booking: Booking; justB
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <Button variant="outline" size="lg" onClick={() => go('/')}>
+          <Button variant="outline" size="lg" className="whitespace-nowrap px-3!" onClick={() => go('/')}>
             Keep browsing
           </Button>
-          <Button size="lg" onClick={() => go('/bookings')}>
-            Manage my booking <ArrowRight className="size-4" />
+          <Button size="lg" className="whitespace-nowrap px-3!" onClick={() => go('/bookings')}>
+            My bookings <ArrowRight className="size-4" />
           </Button>
         </div>
 

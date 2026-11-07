@@ -6,6 +6,10 @@ export const SALON = {
   closeHour: 20,
   slotMinutes: 30,
   bookingDays: 14,
+  /** `Date.getDay()` values the salon is closed on (5 = Friday). */
+  closedWeekdays: [5] as number[],
+  openDaysLabel: 'Sat – Thu',
+  closedDaysLabel: 'Fridays',
   pointsPerCurrencyUnit: 0.1,
 }
 
