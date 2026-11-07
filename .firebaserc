@@ -1,5 +1,13 @@
 {
   "projects": {
     "default": "beaudeskdemo"
+  },
+  "targets": {
+    "beaudeskdemo": {
+      "hosting": {
+        "web": ["beaudesk"],
+        "admin": ["beaudesk-admin"]
+      }
+    }
   }
 }

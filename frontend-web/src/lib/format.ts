@@ -13,6 +13,10 @@ export function dayLabel(iso: string) {
   return `${WEEKDAYS[d.getDay()]}, ${String(d.getDate()).padStart(2, '0')} ${MONTHS[d.getMonth()]}`
 }
 
+export function monthShort(iso: string) {
+  return MONTHS[new Date(`${iso.slice(0, 10)}T00:00:00`).getMonth()]
+}
+
 export function shortDate(iso: string) {
   const d = new Date(`${iso.slice(0, 10)}T00:00:00`)
   return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`

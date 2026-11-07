@@ -53,10 +53,12 @@ export function AppShell() {
           </nav>
           <div className="ml-auto flex items-center gap-2.5">
             {!inBooking && (
-              <Button size="sm" className="hidden h-10 px-4 sm:inline-flex" onClick={() => navigate('/book')}>
-                <CalendarDays className="size-[18px]" />
-                Book Now
-              </Button>
+              <div className="hidden sm:block">
+                <Button size="sm" className="h-10 px-4" onClick={() => navigate('/book')}>
+                  <CalendarDays className="size-[18px]" />
+                  Book Now
+                </Button>
+              </div>
             )}
             <AccountMenu />
           </div>
@@ -163,7 +165,7 @@ function AccountMenu() {
             <span className="font-bold text-wine-950">{customer.points}</span>
           </div>
           <div className="p-1.5">
-            <MenuLink to="/bookings" icon={<CalendarDays className="size-4" />} label="My bookings" />
+            <MenuLink to="/bookings" icon={<CalendarDays className="size-4" />} label="My account & history" />
             <MenuLink to="/memberships" icon={<Crown className="size-4" />} label="Memberships" />
             <button
               type="button"

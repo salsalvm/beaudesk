@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { Smartphone } from 'lucide-react'
+import { DemoNumbers } from '@/components/DemoNumbers'
 import { Card, Field, inputClass } from '@/components/ui'
 import { lookupCustomer } from '@/data/api'
-import { DEMO_CUSTOMERS } from '@/data/db'
 import { COUNTRIES } from '@/lib/config'
-import { cn, formatPhone } from '@/lib/format'
+import { cn } from '@/lib/format'
 import { useDraft } from '../draft'
 import { StepFooter, StepHeading } from '../parts'
 
@@ -92,23 +92,11 @@ export function MobileStep() {
           <button type="submit" className="hidden" />
         </form>
 
-        <div className="mt-5 rounded-2xl bg-wine-50/70 p-3.5">
-          <p className="text-xs font-bold uppercase tracking-wide text-wine-700">Demo numbers</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {DEMO_CUSTOMERS.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => d.set({ dial: c.dial, phone: c.phone })}
-                className="rounded-xl bg-white px-3 py-1.5 text-left text-xs ring-1 ring-wine-100 hover:ring-wine-300"
-              >
-                <span className="block font-semibold text-wine-950">{formatPhone(c.dial, c.phone)}</span>
-                <span className="text-stone-500">{c.name.split(' ')[0]} · existing</span>
-              </button>
-            ))}
-          </div>
-          <p className="mt-2 text-xs text-stone-500">Any other number goes through the new-customer path.</p>
-        </div>
+        <DemoNumbers
+          selected={{ dial: d.dial, phone: d.phone }}
+          onPick={(dial, phone) => d.set({ dial, phone })}
+          note="Any other number goes through the new-customer path."
+        />
       </Card>
 
       <StepFooter

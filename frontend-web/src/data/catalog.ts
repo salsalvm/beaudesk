@@ -12,6 +12,7 @@ export interface Service {
   id: string
   category: CategoryId
   name: string
+  description: string
   durationMin: number
   price: number
   offerPrice?: number
@@ -59,27 +60,27 @@ export const CATEGORIES: Category[] = [
 ]
 
 export const SERVICES: Service[] = [
-  { id: 'hair-cut-blowdry', category: 'hair', name: 'Haircut & Blow-dry', durationMin: 60, price: 120, popular: true },
-  { id: 'hair-blowdry', category: 'hair', name: 'Blow-dry', durationMin: 30, price: 80, popular: true },
-  { id: 'hair-styling', category: 'hair', name: 'Hair styling', durationMin: 45, price: 150 },
-  { id: 'hair-colour', category: 'hair', name: 'Root colour', durationMin: 90, price: 250 },
-  { id: 'hair-keratin', category: 'hair', name: 'Keratin treatment', durationMin: 150, price: 450 },
-  { id: 'hair-spa', category: 'hair', name: 'Hair spa', durationMin: 60, price: 180 },
+  { id: 'hair-cut-blowdry', category: 'hair', name: 'Haircut & Blow-dry', description: 'Consultation, wash, precision cut and a smooth blow-dry finish.', durationMin: 60, price: 120, popular: true },
+  { id: 'hair-blowdry', category: 'hair', name: 'Blow-dry', description: 'Wash and a sleek or bouncy blow-dry, styled the way you like.', durationMin: 30, price: 80, popular: true },
+  { id: 'hair-styling', category: 'hair', name: 'Hair styling', description: 'Curls, waves or an elegant updo for events and evenings out.', durationMin: 45, price: 150 },
+  { id: 'hair-colour', category: 'hair', name: 'Root colour', description: 'Root touch-up matched to your shade, finished with a gloss.', durationMin: 90, price: 250 },
+  { id: 'hair-keratin', category: 'hair', name: 'Keratin treatment', description: 'Smoothing treatment that tames frizz for weeks of easy styling.', durationMin: 150, price: 450 },
+  { id: 'hair-spa', category: 'hair', name: 'Hair spa', description: 'Deep-conditioning mask, scalp massage and steam for soft hair.', durationMin: 60, price: 180 },
 
-  { id: 'nails-manicure', category: 'nails', name: 'Classic manicure', durationMin: 40, price: 90, popular: true },
-  { id: 'nails-gel', category: 'nails', name: 'Gel manicure', durationMin: 60, price: 140 },
-  { id: 'nails-pedicure', category: 'nails', name: 'Classic pedicure', durationMin: 50, price: 110 },
-  { id: 'nails-art', category: 'nails', name: 'Nail art (full set)', durationMin: 45, price: 120 },
+  { id: 'nails-manicure', category: 'nails', name: 'Classic manicure', description: 'Shaping, cuticle care, hand massage and polish of your choice.', durationMin: 40, price: 90, popular: true },
+  { id: 'nails-gel', category: 'nails', name: 'Gel manicure', description: 'Chip-resistant gel colour with a long-lasting high-shine finish.', durationMin: 60, price: 140 },
+  { id: 'nails-pedicure', category: 'nails', name: 'Classic pedicure', description: 'Foot soak, scrub, nail shaping, massage and polish.', durationMin: 50, price: 110 },
+  { id: 'nails-art', category: 'nails', name: 'Nail art (full set)', description: 'Custom designs, chrome or French tips across a full set.', durationMin: 45, price: 120 },
 
-  { id: 'skin-hydrafacial', category: 'skin', name: 'Hydra facial', durationMin: 60, price: 350, offerPrice: 280, popular: true },
-  { id: 'skin-cleansing', category: 'skin', name: 'Deep cleansing facial', durationMin: 50, price: 220, offerPrice: 176 },
-  { id: 'skin-brightening', category: 'skin', name: 'Brightening facial', durationMin: 60, price: 260, offerPrice: 208 },
-  { id: 'skin-threading', category: 'skin', name: 'Eyebrow threading', durationMin: 15, price: 40 },
+  { id: 'skin-hydrafacial', category: 'skin', name: 'Hydra facial', description: 'Cleanse, exfoliate, extract and hydrate for an instant glow.', durationMin: 60, price: 350, offerPrice: 280, popular: true },
+  { id: 'skin-cleansing', category: 'skin', name: 'Deep cleansing facial', description: 'Steam, extraction and a purifying mask for congested skin.', durationMin: 50, price: 220, offerPrice: 176 },
+  { id: 'skin-brightening', category: 'skin', name: 'Brightening facial', description: 'Vitamin C treatment to even out tone and boost radiance.', durationMin: 60, price: 260, offerPrice: 208 },
+  { id: 'skin-threading', category: 'skin', name: 'Eyebrow threading', description: 'Precise brow shaping with thread for clean, defined arches.', durationMin: 15, price: 40 },
 
-  { id: 'makeup-everyday', category: 'makeup', name: 'Everyday makeup', durationMin: 45, price: 200 },
-  { id: 'makeup-party', category: 'makeup', name: 'Party makeup', durationMin: 75, price: 350, popular: true },
-  { id: 'makeup-bridal-trial', category: 'makeup', name: 'Bridal trial', durationMin: 120, price: 600 },
-  { id: 'makeup-lash-lift', category: 'makeup', name: 'Lash lift', durationMin: 45, price: 180 },
+  { id: 'makeup-everyday', category: 'makeup', name: 'Everyday makeup', description: 'A fresh, natural look for work, brunch or daytime events.', durationMin: 45, price: 200 },
+  { id: 'makeup-party', category: 'makeup', name: 'Party makeup', description: 'Full glam with lashes, contour and a long-wear finish.', durationMin: 75, price: 350, popular: true },
+  { id: 'makeup-bridal-trial', category: 'makeup', name: 'Bridal trial', description: 'Plan and test your bridal look with your artist before the day.', durationMin: 120, price: 600 },
+  { id: 'makeup-lash-lift', category: 'makeup', name: 'Lash lift', description: 'Lift and tint your natural lashes — no extensions needed.', durationMin: 45, price: 180 },
 ]
 
 export const PRODUCTS: Product[] = [
@@ -170,3 +171,4 @@ export const stylistById = (id: string) => STYLISTS.find((s) => s.id === id)
 export const planById = (id: string) => PACKAGE_PLANS.find((p) => p.id === id)
 
 export const servicePrice = (s: Service) => s.offerPrice ?? s.price
+export const offerPercent = (s: Service) => (s.offerPrice ? Math.round((1 - s.offerPrice / s.price) * 100) : 0)

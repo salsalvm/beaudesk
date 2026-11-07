@@ -10,7 +10,8 @@
     "dev:api": "npm run dev -w backend",
     "build:web": "npm run build -w frontend-web",
     "typecheck": "npm run typecheck -w frontend-web && npm run typecheck -w backend",
-    "deploy:web": "npm run build:web && firebase deploy --only hosting",
-    "deploy:api": "npm run deploy -w backend"
+    "deploy:web": "npm run build:web && firebase deploy --only hosting:web",
+    "deploy:api": "npm run deploy -w backend",
+    "deploy:admin": "firebase deploy --only hosting:admin"
   }
 }

@@ -7,7 +7,7 @@
   "observability": { "enabled": true },
   "vars": {
     "SUPABASE_URL": "https://mwfueezxkbecoismqngn.supabase.co",
-    "ALLOWED_ORIGINS": "https://beaudeskdemo.web.app,https://beaudeskdemo.firebaseapp.com,http://localhost:5180"
+    "ALLOWED_ORIGINS": "https://beaudesk.web.app,https://beaudesk.firebaseapp.com,https://beaudesk-admin.web.app,https://beaudesk-admin.firebaseapp.com,https://beaudeskdemo.web.app,https://beaudeskdemo.firebaseapp.com,http://localhost:5180"
   }
   // Secrets (set with `wrangler secret put <NAME>`, never commit):
   //   SUPABASE_SECRET_KEY

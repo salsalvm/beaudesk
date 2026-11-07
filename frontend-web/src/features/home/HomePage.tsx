@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import {
   ArrowRight,
@@ -6,6 +6,7 @@ import {
   CalendarDays,
   Check,
   ChevronRight,
+  CircleAlert,
   Clock,
   Crown,
   Gift,
@@ -165,7 +166,27 @@ function GenerateTokenCard() {
   const totalMin = selected.reduce((m, s) => m + s.durationMin, 0)
   const total = selected.reduce((sum, s) => sum + servicePrice(s), 0)
 
+  const servicesRef = useRef<HTMLDivElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
+  const prevCount = useRef(0)
+  const [attempts, setAttempts] = useState(0)
+
+  useEffect(() => {
+    const list = listRef.current
+    if (list && selected.length > prevCount.current) list.scrollTo({ top: list.scrollHeight, behavior: 'smooth' })
+    prevCount.current = selected.length
+  }, [selected.length])
+  const missingService = attempts > 0 && selected.length === 0
+
   const toggle = (id: string) => setServiceIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]))
+  const generate = () => {
+    if (selected.length === 0) {
+      setAttempts((n) => n + 1)
+      servicesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      return
+    }
+    navigate(`/book?service=${serviceIds.join(',')}&date=${date}&time=${time}`)
+  }
   const pickDate = (d: string) => {
     setDate(d)
     if (isPast(d, time)) setTime(firstOpen(d)!)
@@ -231,38 +252,59 @@ function GenerateTokenCard() {
             </div>
           </div>
 
-          <div>
-            <StepLabel n={2} aside="Pick as many as you like">
-              Services
-            </StepLabel>
-            <div className="flex flex-wrap gap-2">
-              {services.map((s) => {
-                const on = serviceIds.includes(s.id)
-                const theme = CATEGORY_THEME[s.category]
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => toggle(s.id)}
-                    aria-pressed={on}
-                    className={cn(
-                      'inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-[13px] font-semibold transition',
-                      on ? cn(theme.soft, theme.border, theme.ring, 'ring-2') : 'border-wine-100 bg-white text-wine-950 hover:border-wine-300',
-                    )}
-                  >
-                    <span
+          <div ref={servicesRef} className="scroll-mt-28">
+            <div
+              key={attempts}
+              className={cn('-m-2.5 rounded-2xl p-2.5 transition-colors', missingService && 'animate-shake bg-red-50/60 ring-2 ring-red-200')}
+            >
+              <StepLabel
+                n={2}
+                aside={
+                  selected.length > 0 ? (
+                    <span className="font-semibold text-emerald-700">{selected.length} selected ✓</span>
+                  ) : (
+                    <span>
+                      <span className="font-semibold text-red-600">Required</span> · pick 1 or more
+                    </span>
+                  )
+                }
+              >
+                Services
+              </StepLabel>
+              <div className="flex flex-wrap gap-2">
+                {services.map((s) => {
+                  const on = serviceIds.includes(s.id)
+                  const theme = CATEGORY_THEME[s.category]
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => toggle(s.id)}
+                      aria-pressed={on}
                       className={cn(
-                        'grid size-4 place-items-center rounded-[5px] border transition',
-                        on ? cn(theme.solid, theme.border) : 'border-wine-200 text-transparent',
+                        'inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-[13px] font-semibold transition',
+                        on ? cn(theme.soft, theme.border, theme.ring, 'ring-2') : 'border-wine-100 bg-white text-wine-950 hover:border-wine-300',
                       )}
                     >
-                      <Check className="size-3" strokeWidth={3.5} />
-                    </span>
-                    {s.name}
-                    <span className={cn('font-medium', on ? theme.text : 'text-stone-400')}>{money(servicePrice(s))}</span>
-                  </button>
-                )
-              })}
+                      <span
+                        className={cn(
+                          'grid size-4 place-items-center rounded-[5px] border transition',
+                          on ? cn(theme.solid, theme.border) : 'border-wine-200 text-transparent',
+                        )}
+                      >
+                        <Check className="size-3" strokeWidth={3.5} />
+                      </span>
+                      {s.name}
+                      <span className={cn('font-medium', on ? theme.text : 'text-stone-400')}>{money(servicePrice(s))}</span>
+                    </button>
+                  )
+                })}
+              </div>
+              {missingService && (
+                <p role="alert" className="mt-2.5 flex items-center gap-1.5 text-sm font-semibold text-red-600">
+                  <CircleAlert className="size-4" /> Pick at least one service to generate your token.
+                </p>
+              )}
             </div>
           </div>
 
@@ -318,61 +360,67 @@ function GenerateTokenCard() {
           </div>
         </div>
 
-        <div className="flex flex-col rounded-3xl bg-cream-50 p-4 ring-1 ring-cream-200 sm:p-5">
-          <p className="text-xs font-bold uppercase tracking-[0.08em] text-wine-600">Your visit</p>
-          <p className="mt-1 flex items-center gap-2 text-sm font-semibold text-wine-950">
-            <CalendarDays className="size-4 text-wine-700" /> {appointmentLabel(date, time)}
-          </p>
+        <div className="relative lg:min-h-[420px]">
+          <div className="flex flex-col rounded-3xl bg-cream-50 p-4 ring-1 ring-cream-200 sm:p-5 lg:absolute lg:inset-0">
+            <p className="text-xs font-bold uppercase tracking-[0.08em] text-wine-600">Your visit</p>
+            <p className="mt-1 flex items-center gap-2 text-sm font-semibold text-wine-950">
+              <CalendarDays className="size-4 text-wine-700" /> {appointmentLabel(date, time)}
+            </p>
 
-          <div className="mt-4 flex-1">
-            {selected.length === 0 ? (
-              <div className="grid h-full min-h-28 place-items-center rounded-2xl border border-dashed border-cream-200 bg-white/60 p-4 text-center text-sm text-stone-500">
-                No services yet — tap one or more on the left.
-              </div>
-            ) : (
-              <ul className="space-y-2">
-                {selected.map((s) => (
-                  <li key={s.id} className="flex items-center gap-3 rounded-2xl bg-white px-3 py-2.5 ring-1 ring-cream-200 animate-fade">
-                    <span className={cn('h-8 w-1 shrink-0 rounded-full', CATEGORY_THEME[s.category].dot)} />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-wine-950">{s.name}</p>
-                      <p className="text-xs text-stone-500">
-                        {categoryById(s.category).name} · {minutesLabel(s.durationMin)}
-                      </p>
-                    </div>
-                    <span className="text-sm font-bold text-wine-950">{money(servicePrice(s))}</span>
-                    <button
-                      type="button"
-                      onClick={() => toggle(s.id)}
-                      aria-label={`Remove ${s.name}`}
-                      className="grid size-7 place-items-center rounded-full text-stone-400 transition hover:bg-wine-50 hover:text-wine-700"
-                    >
-                      <X className="size-4" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          {selected.length > 0 && (
-            <div className="mt-4 flex items-end justify-between border-t border-dashed border-cream-200 pt-3">
-              <span className="text-sm text-stone-600">
-                {selected.length} {selected.length === 1 ? 'service' : 'services'} · {minutesLabel(totalMin)}
-              </span>
-              <span className="text-xl font-extrabold text-wine-950">{money(total)}</span>
+            <div
+              ref={listRef}
+              className="mt-4 max-h-72 min-h-28 flex-1 overflow-y-auto overscroll-contain rounded-2xl [scrollbar-color:var(--color-cream-200)_transparent] [scrollbar-width:thin] lg:max-h-none"
+            >
+              {selected.length === 0 ? (
+                <div className="grid h-full min-h-28 place-items-center rounded-2xl border border-dashed border-cream-200 bg-white/60 p-4 text-center text-sm text-stone-500">
+                  No services yet — tap one or more on the left.
+                </div>
+              ) : (
+                <ul className="space-y-2 pr-1">
+                  {selected.map((s) => (
+                    <li key={s.id} className="flex items-center gap-3 rounded-2xl bg-white px-3 py-2.5 ring-1 ring-cream-200 animate-fade">
+                      <span className={cn('h-8 w-1 shrink-0 rounded-full', CATEGORY_THEME[s.category].dot)} />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-wine-950">{s.name}</p>
+                        <p className="text-xs text-stone-500">
+                          {categoryById(s.category).name} · {minutesLabel(s.durationMin)}
+                        </p>
+                      </div>
+                      <span className="text-sm font-bold text-wine-950">{money(servicePrice(s))}</span>
+                      <button
+                        type="button"
+                        onClick={() => toggle(s.id)}
+                        aria-label={`Remove ${s.name}`}
+                        className="grid size-7 place-items-center rounded-full text-stone-400 transition hover:bg-wine-50 hover:text-wine-700"
+                      >
+                        <X className="size-4" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
-          )}
 
-          <Button
-            size="lg"
-            className="mt-4 w-full text-[17px]"
-            disabled={selected.length === 0}
-            onClick={() => navigate(`/book?service=${serviceIds.join(',')}&date=${date}&time=${time}`)}
-          >
-            <Tag className="size-5" /> {selected.length === 0 ? 'Choose a service to continue' : 'Generate Token'}
-          </Button>
-          <p className="mt-2.5 text-center text-xs text-stone-500">Next: confirm your WhatsApp number · takes under a minute</p>
+            {selected.length > 0 && (
+              <div className="mt-4 flex items-end justify-between border-t border-dashed border-cream-200 pt-3">
+                <span className="text-sm text-stone-600">
+                  {selected.length} {selected.length === 1 ? 'service' : 'services'} · {minutesLabel(totalMin)}
+                </span>
+                <span className="text-xl font-extrabold text-wine-950">{money(total)}</span>
+              </div>
+            )}
+
+            <Button
+              size="lg"
+              className={cn('mt-4 w-full text-[17px]', selected.length === 0 && 'opacity-60')}
+              onClick={generate}
+            >
+              <Tag className="size-5" /> Generate Token
+            </Button>
+            <p className={cn('mt-2.5 text-center text-xs', selected.length === 0 ? 'font-semibold text-red-600' : 'text-stone-500')}>
+              {selected.length === 0 ? 'Select at least one service to generate a token' : 'Next: confirm your WhatsApp number · takes under a minute'}
+            </p>
+          </div>
         </div>
       </div>
     </section>
