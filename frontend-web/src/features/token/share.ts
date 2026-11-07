@@ -1,5 +1,7 @@
+import { branchById } from '@/data/catalog'
 import type { Booking } from '@/data/types'
-import { money } from '@/lib/format'
+import { SALON } from '@/lib/config'
+import { hourLabel, money } from '@/lib/format'
 import { tokenFacts } from './TokenCard'
 
 export function tokenFileName(b: Booking) {
@@ -23,25 +25,72 @@ export function paymentSummary(b: Booking) {
   return parts.join(', ')
 }
 
-export function receiptMessage(b: Booking) {
+const firstName = (b: Booking) => b.customerName.trim().split(/\s+/)[0] || 'there'
+
+/** First WhatsApp message: caption of the token image (WhatsApp caps captions at 1024 chars). */
+export function tokenMessage(b: Booking) {
   const f = tokenFacts(b)
-  const lines = [
-    `Hi ${b.customerName.split(' ')[0]}, your BeauDesk booking is confirmed.`,
+  const area = branchById(b.branchId)?.area
+  return [
+    '✨ *Your BeauDesk visit token*',
     '',
-    `Token: *${b.token}*`,
-    `Services: ${f.services.replace(/\s+·\s+/g, ', ')}`,
-    `When: ${f.when}`,
-    `Salon: ${f.branch} · ${f.stylist}`,
+    `Hi ${firstName(b)}, you're all set! Here's your token for today's visit.`,
     '',
-    '*Receipt*',
-    `Total: ${money(b.total)}`,
-    ...(b.paidOnline > 0 ? [`Paid online: ${money(b.paidOnline)}${b.paymentRef ? ` (Ref ${b.paymentRef})` : ''}`] : []),
-    ...(b.payAtSalon > 0 ? [`Pay at salon: ${money(b.payAtSalon)}`] : []),
-    ...(b.dueKept > 0 ? [`Kept as due: ${money(b.dueKept)}`] : []),
+    `🎟️ Token: *${b.token}*`,
+    `📅 Today · ${f.when}`,
+    `📍 ${f.branch}${area ? ` — ${area}` : ''}`,
+    `💇‍♀️ ${f.services.replace(/\s+·\s+/g, ', ')}`,
+    `👤 Stylist: ${f.stylist}`,
     '',
-    'Show this token at the reception desk.',
+    "Show this token at reception when you arrive — we'll call you as soon as your stylist is ready.",
   ]
-  return lines.join('\n').slice(0, 1024)
+    .join('\n')
+    .slice(0, 1024)
+}
+
+/** Second WhatsApp message: itemised payment receipt (WhatsApp caps text at 4096 chars). */
+export function receiptMessage(b: Booking) {
+  const name = firstName(b)
+  const items = [
+    ...b.services.map((s) => `• ${s.name} — ${s.coveredByPackageId ? 'Package session' : money(s.price)}`),
+    ...b.products.map((p) => `• ${p.name} × ${p.qty} — ${money(p.price * p.qty)}`),
+    ...(b.dueCleared > 0 ? [`• Previous due cleared — ${money(b.dueCleared)}`] : []),
+  ]
+  const spend = b.services.reduce((a, s) => a + s.price, 0) + b.products.reduce((a, p) => a + p.price * p.qty, 0)
+  const points = Math.floor(spend * SALON.pointsPerCurrencyUnit)
+  const method = METHOD[b.paymentMethod]
+
+  const intro =
+    b.paidOnline > 0
+      ? `Thank you, ${name}! We've received your payment of *${money(b.paidOnline)}* for token *${b.token}*.`
+      : b.total === 0
+        ? `Thank you, ${name}! Your visit (token *${b.token}*) is fully covered by your package.`
+        : `Thank you, ${name}! Here's the receipt for token *${b.token}*.`
+
+  return [
+    b.paidOnline > 0 ? '✅ *Payment successful*' : '🧾 *Your BeauDesk receipt*',
+    '',
+    intro,
+    '',
+    '*Order summary*',
+    ...items,
+    '',
+    `*Total: ${money(b.total)}*`,
+    ...(b.paidOnline > 0 ? [`💳 Paid online: ${money(b.paidOnline)}${method ? ` (${method})` : ''}`] : []),
+    ...(b.payAtSalon > 0 ? [`🏪 Pay at the salon: ${money(b.payAtSalon)}`] : []),
+    ...(b.dueKept > 0 ? [`🕒 Kept as due: ${money(b.dueKept)}`] : []),
+    ...(b.paymentRef ? [`Ref: ${b.paymentRef}`] : []),
+    ...(points > 0 ? ['', `⭐ You've earned *${points} loyalty points* on this visit.`] : []),
+    '',
+    '*Good to know*',
+    '• Please arrive 5–10 minutes before your time.',
+    `• We're open ${SALON.openDaysLabel}, ${hourLabel(SALON.openHour)} – ${hourLabel(SALON.closeHour)} · closed on ${SALON.closedDaysLabel}.`,
+    '• Need help? Just reply to this chat.',
+    '',
+    'Thank you for choosing BeauDesk 💐',
+  ]
+    .join('\n')
+    .slice(0, 4096)
 }
 
 export async function renderTokenPng(node: HTMLElement): Promise<Blob> {
@@ -71,7 +120,7 @@ function download(blob: Blob, name: string) {
  * `window.open` after async work, which is why the PNG is rendered beforehand.
  */
 export function shareTokenOnWhatsApp(b: Booking, png: Blob | null): Promise<'shared' | 'opened' | 'cancelled'> {
-  const text = receiptMessage(b)
+  const text = `${tokenMessage(b)}\n\n${receiptMessage(b)}`
   if (png) {
     const file = new File([png], tokenFileName(b), { type: 'image/png' })
     if (navigator.canShare?.({ files: [file] })) {

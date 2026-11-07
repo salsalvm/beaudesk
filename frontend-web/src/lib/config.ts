@@ -5,7 +5,6 @@ export const SALON = {
   openHour: 9,
   closeHour: 20,
   slotMinutes: 30,
-  bookingDays: 14,
   /** Visit tokens read like BD-042. */
   tokenPrefix: 'BD',
   /** `Date.getDay()` values the salon is closed on (5 = Friday). */

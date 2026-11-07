@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { ArrowLeft } from 'lucide-react'
 import { branchById, serviceById, type CategoryId } from '@/data/catalog'
-import { isClosedDay } from '@/lib/format'
+import { isClosedDay, isoDate } from '@/lib/format'
 import { useDraft } from './draft'
 import { Stepper, SummaryPanel, useDraftCustomer } from './parts'
 import { ServicesStep } from './steps/ServicesStep'
@@ -27,7 +27,7 @@ export function BookingFlow() {
     const services = (service ?? '').split(',').flatMap((id) => serviceById(id) ?? [])
     const s = services[0]
     const rawDate = params.get('date')
-    const date = rawDate && !isClosedDay(rawDate) ? rawDate : null
+    const date = rawDate === isoDate(new Date()) && !isClosedDay(rawDate) ? rawDate : null
     const time = date ? params.get('time') : null
     d.reset({
       category: s?.category ?? (category && CATEGORY_IDS.includes(category) ? category : 'hair'),
@@ -43,7 +43,8 @@ export function BookingFlow() {
 
   // Never show a step whose earlier answers are missing (e.g. after a reload).
   useEffect(() => {
-    const needsServices = d.step !== 'services' && (d.serviceIds.length === 0 || !d.date || !d.time || isClosedDay(d.date))
+    const needsServices =
+      d.step !== 'services' && (d.serviceIds.length === 0 || d.date !== isoDate(new Date()) || !d.time || isClosedDay(d.date))
     const needsCustomer = (d.step === 'products' || d.step === 'payment') && !customer
     const needsPhone = d.step === 'customer' && !d.phone
     if (needsServices) d.set({ step: 'services' })

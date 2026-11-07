@@ -4,7 +4,7 @@
  * when swapping in real HTTP calls.
  */
 import { SALON } from '@/lib/config'
-import { isClosedDay } from '@/lib/format'
+import { isClosedDay, isoDate } from '@/lib/format'
 import { useDb } from './db'
 import type { Booking, Customer, PaymentMethod } from './types'
 import type { BookingDraft } from '@/features/booking/draft'
@@ -68,7 +68,8 @@ export async function createBooking(
   const customer = db.customers.find((c) => c.id === customerId)
   if (!customer) throw new Error('Customer not found')
   if (!draft.date || !draft.time || draft.serviceIds.length === 0) throw new Error('Booking is incomplete')
-  if (isClosedDay(draft.date)) throw new Error(`The salon is closed on ${SALON.closedDaysLabel}. Please pick another day.`)
+  if (draft.date !== isoDate(new Date())) throw new Error('Tokens can only be generated for today.')
+  if (isClosedDay(draft.date)) throw new Error(`The salon is closed today (closed on ${SALON.closedDaysLabel}). Please come back tomorrow.`)
 
   const summary = summarize(draft, customer)
   const payError = paymentError(summary.total, draft)

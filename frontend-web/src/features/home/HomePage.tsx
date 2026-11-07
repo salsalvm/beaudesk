@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import {
   ArrowRight,
@@ -11,12 +11,15 @@ import {
   Crown,
   Gift,
   MapPin,
+  Moon,
   Navigation,
   Percent,
   Scissors,
   Sparkles,
   Star,
   Store,
+  Sun,
+  Sunrise,
   Tag,
   Ticket,
   UserRound,
@@ -50,6 +53,12 @@ const TIMES = Array.from(
   { length: SALON.closeHour - SALON.openHour },
   (_, i) => `${String(SALON.openHour + i).padStart(2, '0')}:00`,
 )
+
+const DAY_PARTS = [
+  { label: 'Morning', icon: Sunrise, from: 0, to: 12 },
+  { label: 'Afternoon', icon: Sun, from: 12, to: 17 },
+  { label: 'Evening', icon: Moon, from: 17, to: 24 },
+]
 
 export function HomePage() {
   return (
@@ -171,23 +180,18 @@ function StepLabel({ n, children, aside }: { n: number; children: React.ReactNod
 
 function GenerateTokenCard() {
   const navigate = useNavigate()
-  const days = useMemo(
-    () =>
-      Array.from({ length: SALON.bookingDays }, (_, i) => {
-        const d = new Date()
-        d.setDate(d.getDate() + i)
-        return isoDate(d)
-      }),
-    [],
-  )
-  const nowHour = new Date().getHours()
-  const isPast = (day: string, t: string) => day === days[0] && Number(t.slice(0, 2)) <= nowHour
-  const firstOpen = (day: string) => (isClosedDay(day) ? undefined : TIMES.find((t) => !isPast(day, t)))
+  const now = new Date()
+  const date = isoDate(now)
+  const closedToday = isClosedDay(date)
+  const openTimes = closedToday ? [] : TIMES.filter((t) => Number(t.slice(0, 2)) > now.getHours())
+  const opensLater = now.getHours() < SALON.openHour
+  const reopens = nextOpening(now)
+  const [weekday, rest] = dayLabel(date).split(', ')
+  const [dayNum, month] = rest.split(' ')
 
   const [category, setCategory] = useState<CategoryId>('hair')
   const [serviceIds, setServiceIds] = useState<string[]>([])
-  const [date, setDate] = useState(() => days.find((d) => firstOpen(d)) ?? days[0])
-  const [time, setTime] = useState(() => firstOpen(date)!)
+  const [time, setTime] = useState<string | undefined>(() => openTimes[0])
 
   const services = SERVICES.filter((s) => s.category === category)
   const selected = serviceIds.map((id) => serviceById(id)!)
@@ -208,16 +212,13 @@ function GenerateTokenCard() {
 
   const toggle = (id: string) => setServiceIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]))
   const generate = () => {
+    if (!time) return
     if (selected.length === 0) {
       setAttempts((n) => n + 1)
       servicesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       return
     }
     navigate(`/book?service=${serviceIds.join(',')}&date=${date}&time=${time}`)
-  }
-  const pickDate = (d: string) => {
-    setDate(d)
-    if (isPast(d, time)) setTime(firstOpen(d)!)
   }
 
   return (
@@ -341,61 +342,112 @@ function GenerateTokenCard() {
           </div>
 
           <div>
-            <StepLabel n={3}>Date & time</StepLabel>
-            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-none">
-              {days.map((d, i) => {
-                const [weekday, rest] = dayLabel(d).split(', ')
-                const [dayNum, month] = rest.split(' ')
-                const on = d === date
-                const holiday = isClosedDay(d)
-                const closed = !firstOpen(d)
-                return (
-                  <button
-                    key={d}
-                    type="button"
-                    disabled={closed}
-                    onClick={() => pickDate(d)}
-                    aria-pressed={on}
-                    aria-label={holiday ? `${weekday} ${Number(dayNum)} ${month}, closed` : undefined}
+            <StepLabel
+              n={3}
+              aside={
+                time && (
+                  <span className="font-semibold text-emerald-700">
+                    {openTimes.length} {openTimes.length === 1 ? 'slot' : 'slots'} left today
+                  </span>
+                )
+              }
+            >
+              Date & time
+            </StepLabel>
+            <div className={cn('overflow-hidden rounded-2xl ring-1', time ? 'bg-cream-50 ring-cream-200' : 'bg-red-50/60 ring-red-100')}>
+              <div className="flex items-center gap-3 p-3">
+                <span
+                  aria-label={`Today, ${weekday} ${Number(dayNum)} ${month}${closedToday ? ', closed' : ''}`}
+                  className="flex w-14 shrink-0 flex-col overflow-hidden rounded-xl bg-white text-center shadow-soft ring-1 ring-wine-100"
+                >
+                  <span className={cn('py-0.5 text-[10px] font-bold uppercase tracking-wider text-white', closedToday ? 'bg-red-500' : 'bg-wine-700')}>
+                    {closedToday ? 'Closed' : month}
+                  </span>
+                  <span className={cn('pt-1 text-xl font-extrabold leading-none', time ? 'text-wine-950' : 'text-stone-400')}>{Number(dayNum)}</span>
+                  <span className="pb-1.5 pt-0.5 text-[10px] font-semibold text-stone-500">{weekday}</span>
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[15px] font-bold text-wine-950">
+                    Today · {now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+                  </p>
+                  <p
                     className={cn(
-                      'flex w-[58px] shrink-0 flex-col items-center rounded-xl border py-1.5 transition',
-                      holiday
-                        ? 'cursor-not-allowed border-dashed border-stone-200 bg-stone-50 text-stone-300'
-                        : on
-                          ? 'border-wine-700 bg-wine-700 text-white'
-                          : 'border-wine-100 bg-white text-wine-950 hover:border-wine-300 disabled:opacity-35',
+                      'mt-0.5 flex items-center gap-1.5 text-xs font-semibold',
+                      closedToday ? 'text-red-600' : !time ? 'text-amber-700' : opensLater ? 'text-amber-700' : 'text-emerald-700',
                     )}
                   >
-                    <span className={cn('text-[11px] font-medium', holiday ? 'text-stone-400' : on ? 'text-wine-100' : 'text-stone-500')}>
-                      {i === 0 ? 'Today' : weekday}
+                    <span className="relative flex size-2">
+                      {time && !opensLater && <span className="absolute inset-0 animate-ping rounded-full bg-current opacity-60" />}
+                      <span className="relative size-2 rounded-full bg-current" />
                     </span>
-                    <span className="text-lg font-extrabold leading-tight">{Number(dayNum)}</span>
-                    <span className={cn('text-[10px] font-semibold uppercase', holiday ? 'font-bold text-red-400' : on ? 'text-sun-300' : 'text-wine-600')}>
-                      {holiday ? 'Closed' : month}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-            <div className="-mx-1 mt-2 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-none">
-              {TIMES.map((t) => {
-                const on = t === time
-                return (
-                  <button
-                    key={t}
-                    type="button"
-                    disabled={isPast(date, t)}
-                    onClick={() => setTime(t)}
-                    aria-pressed={on}
-                    className={cn(
-                      'h-9 shrink-0 rounded-xl border px-3 text-[13px] font-semibold transition disabled:opacity-35',
-                      on ? 'border-sun-500 bg-sun-400 text-wine-950' : 'border-wine-100 bg-white text-wine-950 hover:border-wine-300',
-                    )}
-                  >
-                    {timeLabel(t)}
-                  </button>
-                )
-              })}
+                    {closedToday
+                      ? `Closed today · we're closed on ${SALON.closedDaysLabel}`
+                      : !time
+                        ? `No slots left today · closes ${hourLabel(SALON.closeHour)}`
+                        : opensLater
+                          ? `Opens ${hourLabel(SALON.openHour)} today`
+                          : `Open now · until ${hourLabel(SALON.closeHour)}`}
+                  </p>
+                </div>
+                <span className="hidden shrink-0 items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-wine-700 ring-1 ring-wine-100 sm:inline-flex">
+                  <Ticket className="size-3.5" /> Same-day token
+                </span>
+              </div>
+
+              {time ? (
+                <div className="space-y-2.5 border-t border-dashed border-cream-200 bg-white/70 p-3">
+                  {DAY_PARTS.map(({ label, icon: Icon, from, to }) => {
+                    const part = TIMES.filter((t) => Number(t.slice(0, 2)) >= from && Number(t.slice(0, 2)) < to)
+                    if (part.length === 0) return null
+                    const partOver = part.every((t) => !openTimes.includes(t))
+                    return (
+                      <div key={label} className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
+                        <span
+                          className={cn(
+                            'flex w-24 shrink-0 items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.08em]',
+                            partOver ? 'text-stone-300' : 'text-stone-400',
+                          )}
+                        >
+                          <Icon className="size-3.5" /> {label}
+                        </span>
+                        <div className="grid grid-cols-4 gap-1.5 sm:flex sm:flex-wrap">
+                          {part.map((t) => {
+                            const on = t === time
+                            const past = !openTimes.includes(t)
+                            return (
+                              <button
+                                key={t}
+                                type="button"
+                                disabled={past}
+                                onClick={() => setTime(t)}
+                                aria-pressed={on}
+                                aria-label={past ? `${timeLabel(t)}, time passed` : timeLabel(t)}
+                                title={past ? 'This time has passed' : undefined}
+                                className={cn(
+                                  'inline-flex h-9 items-center justify-center gap-1 whitespace-nowrap rounded-xl border px-2 text-[13px] font-semibold transition sm:min-w-[68px] sm:px-3',
+                                  past
+                                    ? 'cursor-not-allowed border-dashed border-stone-200 bg-stone-50 text-stone-300 line-through decoration-stone-300'
+                                    : on
+                                      ? 'border-sun-500 bg-sun-400 text-wine-950 shadow-[0_6px_16px_-8px_rgb(245_183_0/0.9)]'
+                                      : 'border-wine-100 bg-white text-wine-950 hover:border-wine-300 hover:bg-wine-50/40',
+                                )}
+                              >
+                                {on && <Check className="size-3.5" strokeWidth={3} />}
+                                {hourLabel(Number(t.slice(0, 2)))}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <p className="flex items-center gap-2 border-t border-dashed border-red-100 px-3 py-2.5 text-[13px] text-red-700">
+                  <CalendarClock className="size-4 shrink-0" />
+                  Tokens are for same-day visits — come back {reopens} to get yours.
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -404,7 +456,8 @@ function GenerateTokenCard() {
           <div className="flex flex-col rounded-3xl bg-cream-50 p-4 ring-1 ring-cream-200 sm:p-5 lg:absolute lg:inset-0">
             <p className="text-xs font-bold uppercase tracking-[0.08em] text-wine-600 lg:order-1">Your visit</p>
             <p className="mt-1 flex items-center gap-2 text-sm font-semibold text-wine-950 lg:order-1">
-              <CalendarDays className="size-4 text-wine-700" /> {appointmentLabel(date, time)}
+              <CalendarDays className="size-4 text-wine-700" />{' '}
+              {time ? appointmentLabel(date, time) : `${dayLabel(date)} · ${closedToday ? 'Closed today' : 'No slots left'}`}
             </p>
 
             {selected.length > 0 && (
@@ -461,12 +514,22 @@ function GenerateTokenCard() {
             <Button
               size="lg"
               className={cn('mt-4 w-full text-[17px] lg:order-3 lg:mt-3', selected.length === 0 && 'opacity-60')}
+              disabled={!time}
               onClick={generate}
             >
-              <Tag className="size-5" /> Generate Token
+              <Tag className="size-5" /> {time ? 'Generate Token' : closedToday ? 'Closed today' : 'No slots left today'}
             </Button>
-            <p className={cn('mt-2.5 text-center text-xs lg:order-4', selected.length === 0 ? 'font-semibold text-red-600' : 'text-stone-500 lg:hidden')}>
-              {selected.length === 0 ? 'Select at least one service to generate a token' : 'Next: confirm your WhatsApp number · takes under a minute'}
+            <p
+              className={cn(
+                'mt-2.5 text-center text-xs lg:order-4',
+                !time || selected.length === 0 ? 'font-semibold text-red-600' : 'text-stone-500 lg:hidden',
+              )}
+            >
+              {!time
+                ? `Tokens are for same-day visits — come back ${reopens}`
+                : selected.length === 0
+                  ? 'Select at least one service to generate a token'
+                  : 'Next: confirm your WhatsApp number · takes under a minute'}
             </p>
           </div>
         </div>
@@ -495,7 +558,7 @@ function SectionHead({ eyebrow, title, text, link }: { eyebrow: string; title: s
 function HowItWorks() {
   const steps = [
     { icon: Sparkles, title: 'Pick your services', text: 'Combine hair, nails, skin and makeup treatments in a single visit.' },
-    { icon: CalendarClock, title: 'Choose branch & time', text: `Book today or up to ${SALON.bookingDays} days ahead at the branch that suits you.` },
+    { icon: CalendarClock, title: 'Choose branch & time', text: 'Tokens are for same-day visits — pick a time today at the branch that suits you.' },
     { icon: Ticket, title: 'Show your token', text: 'Your token arrives on WhatsApp. Show it at reception and you’re in.' },
   ]
   return (

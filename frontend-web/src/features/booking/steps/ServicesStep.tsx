@@ -1,29 +1,12 @@
-import { useMemo, type ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { CalendarDays, Check, MapPin, Moon, Sparkles, Sun, Sunrise } from 'lucide-react'
 import { ANY_STYLIST, BRANCHES, CATEGORIES, SERVICES, STYLISTS, serviceById } from '@/data/catalog'
 import { ServicePrice, ServiceTags } from '@/features/services/ServiceTags'
 import { CATEGORY_THEME } from '@/lib/categoryTheme'
 import { SALON } from '@/lib/config'
-import { cn, initials, isClosedDay, isoDate, minutesLabel, monthShort, timeLabel } from '@/lib/format'
+import { cn, initials, isClosedDay, isoDate, longDate, minutesLabel, monthShort, timeLabel } from '@/lib/format'
 import { useDraft } from '../draft'
 import { CATEGORY_ICON, StepFooter, StepHeading } from '../parts'
-
-function upcomingDays() {
-  const out: { iso: string; top: string; day: number; month: string; closed: boolean }[] = []
-  const today = new Date()
-  for (let i = 0; i < SALON.bookingDays; i++) {
-    const d = new Date(today)
-    d.setDate(today.getDate() + i)
-    out.push({
-      iso: isoDate(d),
-      top: i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : d.toLocaleDateString('en-GB', { weekday: 'short' }),
-      day: d.getDate(),
-      month: monthShort(isoDate(d)),
-      closed: isClosedDay(isoDate(d)),
-    })
-  }
-  return out
-}
 
 function slotsFor(date: string | null) {
   const slots: { time: string; hour: number; past: boolean }[] = []
@@ -63,14 +46,18 @@ function SubLabel({ children }: { children: ReactNode }) {
 
 export function ServicesStep() {
   const d = useDraft()
-  const days = useMemo(upcomingDays, [])
+  const today = isoDate(new Date())
+  useEffect(() => {
+    if (d.date !== today) d.set({ date: today, time: null })
+  }, [d, today])
   const slots = slotsFor(d.date)
   const services = SERVICES.filter((s) => s.category === d.category)
   const selected = d.serviceIds.flatMap((id) => serviceById(id) ?? [])
   const chosenCats = new Set(selected.map((s) => s.category))
   const stylists = STYLISTS.filter((s) => s.categories.some((c) => chosenCats.has(c) || (chosenCats.size === 0 && c === d.category)))
-  const dateClosed = !!d.date && isClosedDay(d.date)
-  const timeOk = d.time && !dateClosed && slots.some((s) => s.time === d.time && !s.past)
+  const dateClosed = isClosedDay(today)
+  const noSlotsLeft = !dateClosed && slots.every((s) => s.past)
+  const timeOk = d.date === today && d.time && !dateClosed && slots.some((s) => s.time === d.time && !s.past)
 
   return (
     <div>
@@ -218,42 +205,33 @@ export function ServicesStep() {
         </Panel>
 
         <Panel n={3} title="Date & time">
-          <div className="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:-mx-5 sm:px-5">
-            {days.map((day) => {
-              const on = d.date === day.iso && !day.closed
-              return (
-                <button
-                  key={day.iso}
-                  disabled={day.closed}
-                  onClick={() => d.set({ date: day.iso })}
-                  aria-pressed={on}
-                  aria-label={day.closed ? `${day.top} ${day.day} ${day.month}, closed` : undefined}
-                  className={cn(
-                    'flex w-[62px] shrink-0 flex-col items-center rounded-2xl border py-2 transition',
-                    day.closed
-                      ? 'cursor-not-allowed border-dashed border-stone-200 bg-stone-50 text-stone-300'
-                      : on
-                        ? 'border-wine-700 bg-wine-700 text-white shadow-soft'
-                        : 'border-wine-100 bg-white text-wine-950 hover:border-wine-200',
-                  )}
-                >
-                  <span className={cn('text-[11px] font-semibold', day.closed ? 'text-stone-400' : on ? 'text-wine-100' : 'text-stone-500')}>{day.top}</span>
-                  <span className="text-lg font-extrabold leading-tight">{day.day}</span>
-                  <span className={cn('text-[10px] font-bold uppercase', day.closed ? 'text-red-400' : on ? 'text-sun-300' : 'text-wine-600')}>
-                    {day.closed ? 'Closed' : day.month}
-                  </span>
-                </button>
-              )
-            })}
+          <div className="flex items-center gap-3">
+            <span
+              aria-label={`Today, ${longDate(today)}${dateClosed ? ', closed' : ''}`}
+              className={cn(
+                'flex w-[62px] shrink-0 flex-col items-center rounded-2xl border py-2',
+                dateClosed || noSlotsLeft
+                  ? 'border-dashed border-stone-200 bg-stone-50 text-stone-300'
+                  : 'border-wine-700 bg-wine-700 text-white shadow-soft',
+              )}
+            >
+              <span className={cn('text-[11px] font-semibold', dateClosed || noSlotsLeft ? 'text-stone-400' : 'text-wine-100')}>Today</span>
+              <span className="text-lg font-extrabold leading-tight">{new Date(`${today}T00:00:00`).getDate()}</span>
+              <span className={cn('text-[10px] font-bold uppercase', dateClosed ? 'text-red-400' : noSlotsLeft ? 'text-stone-400' : 'text-sun-300')}>
+                {dateClosed ? 'Closed' : monthShort(today)}
+              </span>
+            </span>
+            <p className="text-xs text-stone-500">
+              <span className="block text-sm font-semibold text-wine-950">{longDate(today)}</span>
+              Tokens are for today's visits only · open {SALON.openDaysLabel}, closed on {SALON.closedDaysLabel}
+            </p>
           </div>
-
-          <p className="mt-2 text-xs text-stone-500">
-            Open {SALON.openDaysLabel} · closed on {SALON.closedDaysLabel}
-          </p>
-          {!d.date || dateClosed ? (
+          {dateClosed || noSlotsLeft ? (
             <div className="mt-4 flex items-center gap-3 rounded-2xl border border-dashed border-wine-200 bg-wine-50/40 px-4 py-5 text-sm text-stone-500">
               <CalendarDays className="size-5 shrink-0 text-wine-600" />
-              {dateClosed ? `We're closed on ${SALON.closedDaysLabel} — pick another day.` : 'Pick a date above to see available times.'}
+              {dateClosed
+                ? `We're closed today (closed on ${SALON.closedDaysLabel}). Come back tomorrow to generate your token.`
+                : 'No slots left today. Come back tomorrow to generate your token.'}
             </div>
           ) : (
             <div className="mt-5 space-y-4">
@@ -297,8 +275,10 @@ export function ServicesStep() {
       </div>
 
       <StepFooter
-        primary={d.serviceIds.length === 0 ? 'Select a service' : !d.date || !timeOk ? 'Pick date & time' : 'Continue'}
-        disabled={d.serviceIds.length === 0 || !d.date || !timeOk}
+        primary={
+          dateClosed ? 'Closed today' : noSlotsLeft ? 'No slots left today' : d.serviceIds.length === 0 ? 'Select a service' : !timeOk ? 'Pick a time' : 'Continue'
+        }
+        disabled={d.serviceIds.length === 0 || !timeOk}
         onPrimary={() => d.set({ step: 'mobile' })}
       />
     </div>

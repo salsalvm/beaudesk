@@ -1,9 +1,10 @@
 import { useDb } from '@/data/db'
 import type { Booking } from '@/data/types'
-import { paymentSummary, receiptMessage, tokenFileName } from './share'
+import { money } from '@/lib/format'
+import { paymentSummary, receiptMessage, tokenFileName, tokenMessage } from './share'
 import { tokenFacts } from './TokenCard'
 
-/** Sends the token image + receipt to the booking's WhatsApp number and records the result on the booking. */
+/** Sends two WhatsApp messages (token image, then payment receipt) and records the result on the booking. */
 export async function sendBookingToWhatsApp(b: Booking, png: Blob | null) {
   const f = tokenFacts(b)
   const form = new FormData()
@@ -16,7 +17,9 @@ export async function sendBookingToWhatsApp(b: Booking, png: Blob | null) {
       services: f.services.replace(/\s+·\s+/g, ', '),
       when: `${f.when} · ${f.branch}`,
       payment: paymentSummary(b),
-      caption: receiptMessage(b),
+      total: money(b.total),
+      caption: tokenMessage(b),
+      receipt: receiptMessage(b),
     }),
   )
   if (png) form.append('image', png, tokenFileName(b))

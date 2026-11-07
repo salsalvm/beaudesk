@@ -13,6 +13,7 @@
   //   SUPABASE_SECRET_KEY
   //   WHATSAPP_TOKEN            Meta WhatsApp Cloud API access token
   //   WHATSAPP_PHONE_NUMBER_ID  sender phone number id from Meta
-  //   WHATSAPP_TEMPLATE         (optional) approved template name for booking confirmations
+  //   WHATSAPP_TEMPLATE         (optional) approved template name for the token message
+  //   WHATSAPP_RECEIPT_TEMPLATE (optional) approved template name for the payment receipt message
   // Without the WhatsApp secrets, /notify/booking answers { status: "demo" } and sends nothing.
 }

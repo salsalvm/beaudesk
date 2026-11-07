@@ -199,7 +199,7 @@ function WhatsAppStatus({
   const delivered = status === 'sent' || status === 'demo'
   const failed = status === 'failed'
   const title = sending ? 'Sending to WhatsApp…' : delivered ? 'Sent to WhatsApp' : failed ? "Couldn't send automatically" : 'Send to WhatsApp'
-  const sub = failed ? 'Tap Send to share it from your phone.' : `Token & receipt · ${phone}`
+  const sub = failed ? 'Tap Send to share it from your phone.' : `Token + receipt · ${phone}`
 
   return (
     <div
