@@ -1,0 +1,16 @@
+---
+description: Deploy only with explicit permission, and only to BeauDesk's own accounts
+alwaysApply: true
+---
+
+# Deploys and cloud accounts
+
+## Never deploy without asking
+- Do not run `npm run deploy:*`, `wrangler deploy`, `firebase deploy`, `wrangler secret put` or anything else that changes a live environment unless the user has explicitly asked for that deploy in the current message.
+- Show the exact command(s) first; finishing a code change is not permission to deploy.
+
+## Use only BeauDesk's own accounts
+- Never deploy, read or change resources using another project's access (e.g. the `tabletalkbill` Cloudflare account / `hashimmuhammad313@gmail.com`).
+- Before any Cloudflare command, run `npx wrangler whoami` and confirm the account matches the `account_id` in `backend/wrangler.jsonc`. If `account_id` is missing or the account differs, stop and ask the user.
+- Before any Firebase command, confirm the active project is BeauDesk's (`.firebaserc`) and the logged-in account is the one the user chose for BeauDesk; if unsure, ask.
+- Do not log in, switch accounts or create resources on the user's behalf without asking.

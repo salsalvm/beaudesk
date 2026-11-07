@@ -10,11 +10,11 @@ export interface BookingNotice {
   services: string
   when: string
   payment: string
-  total: string
+  total?: string
   /** First message: visit token text, used as the image caption (max 1024 chars). */
   caption: string
-  /** Second message: itemised payment receipt (max 4096 chars). */
-  receipt: string
+  /** Second message: itemised payment receipt (max 4096 chars). Older clients don't send it. */
+  receipt?: string
 }
 
 interface Config {
@@ -88,11 +88,13 @@ export async function sendBookingMessages(cfg: Config, n: BookingNotice, png: Fi
         ? { type: 'image', image: { id: mediaId, caption: n.caption } }
         : { type: 'text', text: { body: n.caption } }
 
-    const receipt = cfg.receiptTemplate
-      ? templateMessage(cfg, cfg.receiptTemplate, [n.name, n.token, n.total, n.payment])
-      : { type: 'text', text: { body: n.receipt } }
-
-    const ids = [await send(cfg, n.to, token), await send(cfg, n.to, receipt)]
+    const ids = [await send(cfg, n.to, token)]
+    if (n.receipt) {
+      const receipt = cfg.receiptTemplate
+        ? templateMessage(cfg, cfg.receiptTemplate, [n.name, n.token, n.total ?? '', n.payment])
+        : { type: 'text', text: { body: n.receipt } }
+      ids.push(await send(cfg, n.to, receipt))
+    }
     return { ok: true, ids }
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : 'WhatsApp send failed' }

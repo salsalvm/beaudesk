@@ -37,8 +37,8 @@ app.post('/notify/booking', async (c) => {
   if (!/^\d{8,15}$/.test(notice.to ?? '')) return c.json({ error: 'Invalid WhatsApp number' }, 400)
   if (!/^[A-Z]{1,3}-\d{3,}$/.test(notice.token ?? '')) return c.json({ error: 'Invalid token' }, 400)
   if (typeof notice.caption !== 'string' || notice.caption.length > 1024) return c.json({ error: 'Invalid token message' }, 400)
-  if (typeof notice.receipt !== 'string' || notice.receipt.length > 4096) return c.json({ error: 'Invalid receipt' }, 400)
-  if (typeof notice.total !== 'string') return c.json({ error: 'Invalid total' }, 400)
+  if (notice.receipt !== undefined && (typeof notice.receipt !== 'string' || notice.receipt.length > 4096))
+    return c.json({ error: 'Invalid receipt' }, 400)
 
   const image = form.get('image')
   const png = image instanceof File && image.type === 'image/png' && image.size < 2_000_000 ? image : null
