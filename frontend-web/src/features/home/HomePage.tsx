@@ -40,7 +40,7 @@ import { useCurrentCustomer, useDb } from '@/data/db'
 import { CATEGORY_ICON } from '@/features/booking/parts'
 import { activePackages, remaining } from '@/features/booking/pricing'
 import { useTokenModal } from '@/features/token/TokenModal'
-import { CATEGORY_THEME, categoryOfToken } from '@/lib/categoryTheme'
+import { CATEGORY_THEME, categoryOfBooking } from '@/lib/categoryTheme'
 import { SALON } from '@/lib/config'
 import { appointmentLabel, cn, dayLabel, hourLabel, hoursLabel, isClosedDay, isoDate, minutesLabel, money, timeLabel } from '@/lib/format'
 
@@ -735,9 +735,9 @@ function UpcomingCard() {
     >
       {next ? (
         <button onClick={() => show(next.id)} className="flex w-full items-center gap-4 rounded-2xl bg-wine-50/60 p-3 text-left ring-1 ring-wine-100">
-          <span className={cn('rounded-xl px-3 py-2 text-center', CATEGORY_THEME[categoryOfToken(next.token)].soft)}>
+          <span className={cn('rounded-xl px-3 py-2 text-center', CATEGORY_THEME[categoryOfBooking(next)].soft)}>
             <span className="block text-[11px] opacity-75">Token</span>
-            <span className="block text-lg font-extrabold">#{next.token.replace('-', '')}</span>
+            <span className="block text-lg font-extrabold">{next.token}</span>
           </span>
           <span className="min-w-0 space-y-1 border-l border-wine-100 pl-4 text-xs text-wine-950">
             <span className="flex items-center gap-2 truncate">

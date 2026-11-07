@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { SALON } from '@/lib/config'
 import { isClosedDay, isoDate } from '@/lib/format'
 import type { Booking, Customer } from './types'
 
@@ -66,7 +67,8 @@ interface DbState {
   currentCustomerId: string | null
   upsertCustomer: (c: Customer) => void
   addBooking: (b: Booking) => void
-  nextToken: (letter: string) => string
+  updateBooking: (id: string, patch: Partial<Booking>) => void
+  nextToken: () => string
   setCurrentCustomer: (id: string | null) => void
 }
 
@@ -84,16 +86,18 @@ export const useDb = create<DbState>()(
             : [...s.customers, c],
         })),
       addBooking: (b) => set((s) => ({ bookings: [b, ...s.bookings] })),
-      nextToken: (letter) => {
-        const n = (get().tokenCounters[letter] ?? 41) + 1
-        set((s) => ({ tokenCounters: { ...s.tokenCounters, [letter]: n } }))
-        return `${letter}-${String(n).padStart(3, '0')}`
+      updateBooking: (id, patch) => set((s) => ({ bookings: s.bookings.map((b) => (b.id === id ? { ...b, ...patch } : b)) })),
+      nextToken: () => {
+        const prefix = SALON.tokenPrefix
+        const n = (get().tokenCounters[prefix] ?? 41) + 1
+        set((s) => ({ tokenCounters: { ...s.tokenCounters, [prefix]: n } }))
+        return `${prefix}-${String(n).padStart(3, '0')}`
       },
       setCurrentCustomer: (id) => set({ currentCustomerId: id }),
     }),
     {
       name: 'beaudesk-db',
-      version: 2,
+      version: 3,
       migrate: (persisted, version) => {
         const state = persisted as DbState
         if (version < 2) {
@@ -103,6 +107,16 @@ export const useDb = create<DbState>()(
             payAtSalon: 0,
             dueKept: 0,
           }))
+        }
+        if (version < 3) {
+          let n = 41
+          const renumbered = new Map(
+            [...state.bookings]
+              .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+              .map((b) => [b.id, `${SALON.tokenPrefix}-${String(++n).padStart(3, '0')}`]),
+          )
+          state.bookings = state.bookings.map((b) => ({ ...b, token: renumbered.get(b.id) ?? b.token }))
+          state.tokenCounters = { [SALON.tokenPrefix]: n }
         }
         return state
       },

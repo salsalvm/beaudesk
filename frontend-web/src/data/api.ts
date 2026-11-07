@@ -5,7 +5,6 @@
  */
 import { SALON } from '@/lib/config'
 import { isClosedDay } from '@/lib/format'
-import { categoryById, serviceById } from './catalog'
 import { useDb } from './db'
 import type { Booking, Customer, PaymentMethod } from './types'
 import type { BookingDraft } from '@/features/booking/draft'
@@ -76,8 +75,7 @@ export async function createBooking(
   if (payError) throw new Error(payError)
   const split = paymentSplit(summary.total, draft)
   if (split.online > 0 && !payment.ref) throw new Error('Payment was not completed')
-  const firstService = serviceById(draft.serviceIds[0])!
-  const token = db.nextToken(categoryById(firstService.category).tokenLetter)
+  const token = db.nextToken()
   const covered = new Set(summary.services.map((l) => l.coveredByPackageId).filter(Boolean))
 
   const booking: Booking = {

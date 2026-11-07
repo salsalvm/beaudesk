@@ -23,7 +23,7 @@ import type { Booking, Customer } from '@/data/types'
 import { CATEGORY_ICON } from '@/features/booking/parts'
 import { remaining } from '@/features/booking/pricing'
 import { useTokenModal } from '@/features/token/TokenModal'
-import { CATEGORY_THEME, categoryOfToken } from '@/lib/categoryTheme'
+import { CATEGORY_THEME, categoryOfBooking } from '@/lib/categoryTheme'
 import { appointmentLabel, cn, formatPhone, initials, isoDate, money, monthShort, shortDate, timeLabel } from '@/lib/format'
 
 type Tab = 'upcoming' | 'history' | 'packages'
@@ -191,7 +191,7 @@ function UpcomingList({ items }: { items: Booking[] }) {
   return (
     <div className="grid gap-3 md:grid-cols-2">
       {items.map((b) => {
-        const theme = CATEGORY_THEME[categoryOfToken(b.token)]
+        const theme = CATEGORY_THEME[categoryOfBooking(b)]
         return (
           <button
             key={b.id}

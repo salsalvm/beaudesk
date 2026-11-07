@@ -71,4 +71,6 @@ export interface Booking {
   time: string
   createdAt: string
   status: 'confirmed' | 'cancelled'
+  /** Automatic WhatsApp delivery of the token + receipt. `demo` means the API isn't connected yet. */
+  whatsapp?: { status: 'sent' | 'demo' | 'failed'; at: string }
 }

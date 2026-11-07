@@ -1,4 +1,5 @@
-import { CATEGORIES, type CategoryId } from '@/data/catalog'
+import { serviceById, type CategoryId } from '@/data/catalog'
+import type { Booking } from '@/data/types'
 
 export interface CategoryTheme {
   /** Filled surface for selected states. */
@@ -58,5 +59,6 @@ export const CATEGORY_THEME: Record<CategoryId, CategoryTheme> = {
   },
 }
 
-export const categoryOfToken = (token: string): CategoryId =>
-  CATEGORIES.find((c) => token.startsWith(`${c.tokenLetter}-`))?.id ?? 'hair'
+/** A booking takes the colour of its first service's category. */
+export const categoryOfBooking = (b: Pick<Booking, 'services'>): CategoryId =>
+  serviceById(b.services[0]?.serviceId ?? '')?.category ?? 'hair'

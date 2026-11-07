@@ -11,4 +11,8 @@
   }
   // Secrets (set with `wrangler secret put <NAME>`, never commit):
   //   SUPABASE_SECRET_KEY
+  //   WHATSAPP_TOKEN            Meta WhatsApp Cloud API access token
+  //   WHATSAPP_PHONE_NUMBER_ID  sender phone number id from Meta
+  //   WHATSAPP_TEMPLATE         (optional) approved template name for booking confirmations
+  // Without the WhatsApp secrets, /notify/booking answers { status: "demo" } and sends nothing.
 }

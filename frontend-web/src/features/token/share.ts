@@ -1,18 +1,47 @@
 import type { Booking } from '@/data/types'
+import { money } from '@/lib/format'
 import { tokenFacts } from './TokenCard'
 
 export function tokenFileName(b: Booking) {
   return `BeauDesk-token-${b.token}.png`
 }
 
-export function tokenMessage(b: Booking) {
+const METHOD: Record<Booking['paymentMethod'], string> = {
+  card: 'Card',
+  apple_pay: 'Apple Pay',
+  google_pay: 'Google Pay',
+  none: '',
+}
+
+export function paymentSummary(b: Booking) {
+  if (b.total === 0) return 'Covered by your package'
+  const parts = [
+    b.paidOnline > 0 && `${money(b.paidOnline)} paid online${METHOD[b.paymentMethod] ? ` (${METHOD[b.paymentMethod]})` : ''}`,
+    b.payAtSalon > 0 && `${money(b.payAtSalon)} to pay at the salon`,
+    b.dueKept > 0 && `${money(b.dueKept)} kept as due`,
+  ].filter(Boolean)
+  return parts.join(', ')
+}
+
+export function receiptMessage(b: Booking) {
   const f = tokenFacts(b)
-  return [
-    `BeauDesk visit token: *${b.token}*`,
-    `${f.services.replace(/\s+·\s+/g, ' · ')}`,
-    `${f.when} · ${f.branch}`,
+  const lines = [
+    `Hi ${b.customerName.split(' ')[0]}, your BeauDesk booking is confirmed.`,
+    '',
+    `Token: *${b.token}*`,
+    `Services: ${f.services.replace(/\s+·\s+/g, ', ')}`,
+    `When: ${f.when}`,
+    `Salon: ${f.branch} · ${f.stylist}`,
+    '',
+    '*Receipt*',
+    `Total: ${money(b.total)}`,
+    ...(b.paidOnline > 0 ? [`Paid online: ${money(b.paidOnline)}${b.paymentRef ? ` (Ref ${b.paymentRef})` : ''}`] : []),
+    ...(b.payAtSalon > 0 ? [`Pay at salon: ${money(b.payAtSalon)}`] : []),
+    ...(b.dueKept > 0 ? [`Kept as due: ${money(b.dueKept)}`] : []),
+    '',
     'Show this token at the reception desk.',
-  ].join('\n')
+  ]
+  return lines.join('\n').slice(0, 1024)
 }
 
 export async function renderTokenPng(node: HTMLElement): Promise<Blob> {
@@ -42,7 +71,7 @@ function download(blob: Blob, name: string) {
  * `window.open` after async work, which is why the PNG is rendered beforehand.
  */
 export function shareTokenOnWhatsApp(b: Booking, png: Blob | null): Promise<'shared' | 'opened' | 'cancelled'> {
-  const text = tokenMessage(b)
+  const text = receiptMessage(b)
   if (png) {
     const file = new File([png], tokenFileName(b), { type: 'image/png' })
     if (navigator.canShare?.({ files: [file] })) {

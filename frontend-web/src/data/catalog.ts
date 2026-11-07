@@ -4,7 +4,6 @@ export interface Category {
   id: CategoryId
   name: string
   blurb: string
-  tokenLetter: string
   photo: string
 }
 
@@ -53,10 +52,10 @@ export interface PackagePlan {
 }
 
 export const CATEGORIES: Category[] = [
-  { id: 'hair', name: 'Hair', blurb: 'Cuts, styling, colour & more', tokenLetter: 'A', photo: '/img/stylist-blowdry.jpg' },
-  { id: 'nails', name: 'Nails', blurb: 'Manicure, pedicure & nail art', tokenLetter: 'B', photo: '/img/product-nail-care.jpg' },
-  { id: 'skin', name: 'Skin', blurb: 'Facials, cleansing & skin care', tokenLetter: 'C', photo: '/img/salon-relax.jpg' },
-  { id: 'makeup', name: 'Makeup', blurb: 'Everyday, party & bridal looks', tokenLetter: 'D', photo: '/img/hero-woman.jpg' },
+  { id: 'hair', name: 'Hair', blurb: 'Cuts, styling, colour & more', photo: '/img/stylist-blowdry.jpg' },
+  { id: 'nails', name: 'Nails', blurb: 'Manicure, pedicure & nail art', photo: '/img/product-nail-care.jpg' },
+  { id: 'skin', name: 'Skin', blurb: 'Facials, cleansing & skin care', photo: '/img/salon-relax.jpg' },
+  { id: 'makeup', name: 'Makeup', blurb: 'Everyday, party & bridal looks', photo: '/img/hero-woman.jpg' },
 ]
 
 export const SERVICES: Service[] = [
