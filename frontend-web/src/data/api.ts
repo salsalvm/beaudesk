@@ -9,7 +9,7 @@ import { categoryById, serviceById } from './catalog'
 import { useDb } from './db'
 import type { Booking, Customer, PaymentMethod } from './types'
 import type { BookingDraft } from '@/features/booking/draft'
-import { paymentSplit, summarize } from '@/features/booking/pricing'
+import { paymentError, paymentSplit, summarize } from '@/features/booking/pricing'
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
 const uid = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2, 10)}`
@@ -72,6 +72,8 @@ export async function createBooking(
   if (isClosedDay(draft.date)) throw new Error(`The salon is closed on ${SALON.closedDaysLabel}. Please pick another day.`)
 
   const summary = summarize(draft, customer)
+  const payError = paymentError(summary.total, draft)
+  if (payError) throw new Error(payError)
   const split = paymentSplit(summary.total, draft)
   if (split.online > 0 && !payment.ref) throw new Error('Payment was not completed')
   const firstService = serviceById(draft.serviceIds[0])!

@@ -37,12 +37,14 @@ export interface BookingDraft {
   clearDue: boolean
   products: Record<string, number>
   payMode: PayMode
-  customPayNow: number
-  /** Part of the unpaid balance the customer wants to carry as due instead of paying at the salon. */
-  keepDue: number
+  /** `part` plan: amount paid online; the rest is paid at the salon. */
+  partOnline: number
+  /** `due` plan: amount paid now (online or at the salon); the rest is kept as due. */
+  duePay: number
+  duePaidOnline: boolean
 }
 
-export type PayMode = 'full' | 'half' | 'custom' | 'salon'
+export type PayMode = 'full' | 'salon' | 'part' | 'due'
 
 const initial = (): BookingDraft => ({
   step: 'services',
@@ -62,8 +64,9 @@ const initial = (): BookingDraft => ({
   clearDue: true,
   products: {},
   payMode: 'full',
-  customPayNow: 0,
-  keepDue: 0,
+  partOnline: 0,
+  duePay: 0,
+  duePaidOnline: true,
 })
 
 interface DraftStore extends BookingDraft {

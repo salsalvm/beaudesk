@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { LoaderCircle, X } from 'lucide-react'
 import { cn } from '@/lib/format'
 
-type Variant = 'sun' | 'wine' | 'outline' | 'ghost' | 'soft'
+type Variant = 'sun' | 'wine' | 'outline' | 'ghost' | 'soft' | 'danger'
 type Size = 'sm' | 'md' | 'lg'
 
 const variants: Record<Variant, string> = {
@@ -12,6 +12,7 @@ const variants: Record<Variant, string> = {
   outline: 'border border-wine-100 bg-white text-wine-950 hover:border-wine-200 hover:bg-wine-50',
   ghost: 'text-wine-800 hover:bg-wine-50',
   soft: 'bg-wine-50 text-wine-800 hover:bg-wine-100',
+  danger: 'bg-red-600 text-white shadow-[0_6px_16px_-8px_rgb(220_38_38/0.9)] hover:bg-red-700 active:bg-red-800',
 }
 const sizes: Record<Size, string> = {
   sm: 'h-9 px-3.5 text-sm rounded-xl gap-1.5',

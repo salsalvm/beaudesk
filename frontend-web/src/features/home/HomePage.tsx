@@ -55,7 +55,7 @@ export function HomePage() {
   return (
     <div className="animate-fade">
       <Hero />
-      <div id="book" className="relative z-10 -mt-20 scroll-mt-24 sm:mx-4 lg:mx-8">
+      <div id="book" className="relative z-10 -mt-20 scroll-mt-24 sm:mx-4 lg:mx-8 lg:-mt-24">
         <GenerateTokenCard />
       </div>
       <div className="mt-16 space-y-16">
@@ -115,19 +115,28 @@ function Hero() {
       <span className="absolute inset-0 bg-gradient-to-r from-wine-950 via-wine-950/85 to-wine-950/30 md:hidden" />
       <span className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-wine-950/80 to-transparent" />
       <span className="absolute -left-24 -top-28 size-80 rounded-full bg-wine-600/40 blur-3xl" />
-      <span className="absolute right-[38%] top-10 hidden size-5 rounded-full bg-sun-400 md:block" />
-
-      <div className="relative max-w-2xl px-5 pb-24 pt-7 sm:px-10 sm:pb-32 sm:pt-12">
-        <OpenStatus />
-        <h1 className="mt-4 text-[31px] font-extrabold leading-[1.06] tracking-tight min-[400px]:text-[34px] sm:mt-5 sm:text-[54px]">
+      <div className="relative max-w-2xl px-5 pb-24 pt-7 sm:px-10 sm:pb-32 sm:pt-12 lg:max-w-3xl lg:pb-[124px] lg:pt-8">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          <OpenStatus />
+          <ul className="hidden items-center gap-4 text-[13px] lg:flex">
+            {facts.map(({ icon: Icon, label, sub }) => (
+              <li key={label} className="flex items-center gap-1.5 whitespace-nowrap">
+                <Icon className="size-4 text-sun-400" />
+                <span className="font-bold">{label}</span>
+                <span className="text-wine-200">· {sub}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <h1 className="mt-4 text-[31px] font-extrabold leading-[1.06] tracking-tight min-[400px]:text-[34px] sm:mt-5 sm:text-[54px] lg:mt-4 lg:text-[44px]">
           Your salon visit,
           <br />
           <span className="text-sun-400">booked in a minute.</span>
         </h1>
-        <p className="mt-3 max-w-lg text-[14px] leading-relaxed text-wine-100 sm:mt-4 sm:text-[17px]">
+        <p className="mt-3 max-w-lg text-[14px] leading-relaxed text-wine-100 sm:mt-4 sm:text-[17px] lg:mt-3 lg:max-w-xl lg:text-[16px] lg:[@media(max-height:820px)]:hidden">
           Pick your treatments, choose a time and get your visit token on WhatsApp. Walk in, show it at reception and relax.
         </p>
-        <ul className="mt-5 grid max-w-xl grid-cols-3 gap-2 sm:mt-7 sm:gap-4">
+        <ul className="mt-5 grid max-w-xl grid-cols-3 gap-2 sm:mt-7 sm:gap-4 lg:hidden">
           {facts.map(({ icon: Icon, label, sub }) => (
             <li
               key={label}
@@ -214,7 +223,7 @@ function GenerateTokenCard() {
   return (
     <section
       aria-labelledby="token-title"
-      className="relative rounded-[28px] bg-white p-4 shadow-lift ring-1 ring-wine-100 sm:p-6 lg:p-7"
+      className="relative rounded-[28px] bg-white p-4 shadow-lift ring-1 ring-wine-100 sm:p-6 lg:px-7 lg:pb-6 lg:pt-6"
     >
       <span className="absolute -top-3.5 left-5 inline-flex items-center gap-1.5 rounded-full bg-sun-400 px-3 py-1 text-xs font-bold text-wine-950 shadow-[0_6px_16px_-8px_rgb(245_183_0/0.9)] sm:left-7">
         <Sparkles className="size-3.5" /> Fastest way to book
@@ -235,8 +244,8 @@ function GenerateTokenCard() {
         </span>
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:gap-8">
-        <div className="min-w-0 space-y-6">
+      <div className="mt-6 grid gap-6 lg:mt-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:gap-8">
+        <div className="min-w-0 space-y-6 lg:space-y-5">
           <div>
             <StepLabel n={1}>Category</StepLabel>
             <div className="grid grid-cols-4 gap-2">
@@ -252,13 +261,13 @@ function GenerateTokenCard() {
                     onClick={() => setCategory(c.id)}
                     aria-pressed={on}
                     className={cn(
-                      'relative flex flex-col items-center gap-1.5 rounded-2xl border py-3 text-xs font-semibold transition sm:text-sm',
+                      'relative flex flex-col items-center gap-1.5 rounded-2xl border py-3 text-xs font-semibold transition sm:text-sm lg:h-12 lg:flex-row lg:justify-center lg:gap-2 lg:py-0',
                       on
                         ? cn(theme.solid, theme.border, 'shadow-[0_8px_20px_-12px_rgb(43_10_22/0.7)]')
                         : 'border-wine-100 bg-white text-wine-900 hover:border-wine-300',
                     )}
                   >
-                    <Icon className={cn('size-5', on ? 'text-white' : theme.text)} />
+                    <Icon className={cn('size-5 lg:size-[18px]', on ? 'text-white' : theme.text)} />
                     {c.name}
                     {count > 0 && (
                       <span className="absolute -right-1.5 -top-1.5 grid size-5 place-items-center rounded-full bg-sun-400 text-[11px] font-bold text-wine-950 ring-2 ring-white">
@@ -391,41 +400,46 @@ function GenerateTokenCard() {
           </div>
         </div>
 
-        <div className="relative lg:min-h-[420px]">
+        <div className="relative lg:min-h-[400px]">
           <div className="flex flex-col rounded-3xl bg-cream-50 p-4 ring-1 ring-cream-200 sm:p-5 lg:absolute lg:inset-0">
-            <p className="text-xs font-bold uppercase tracking-[0.08em] text-wine-600">Your visit</p>
-            <p className="mt-1 flex items-center gap-2 text-sm font-semibold text-wine-950">
+            <p className="text-xs font-bold uppercase tracking-[0.08em] text-wine-600 lg:order-1">Your visit</p>
+            <p className="mt-1 flex items-center gap-2 text-sm font-semibold text-wine-950 lg:order-1">
               <CalendarDays className="size-4 text-wine-700" /> {appointmentLabel(date, time)}
             </p>
 
+            {selected.length > 0 && (
+              <p className="mt-4 hidden items-center justify-between border-t border-dashed border-cream-200 pt-2.5 text-xs font-bold uppercase tracking-[0.08em] text-wine-600 lg:order-5 lg:flex">
+                Selected services <span className="text-stone-400">{selected.length}</span>
+              </p>
+            )}
             <div
               ref={listRef}
-              className="mt-4 max-h-72 min-h-28 flex-1 overflow-y-auto overscroll-contain rounded-2xl [scrollbar-color:var(--color-cream-200)_transparent] [scrollbar-width:thin] lg:max-h-none"
+              className="mt-4 max-h-72 min-h-28 flex-1 overflow-y-auto overscroll-contain rounded-2xl [scrollbar-color:var(--color-cream-200)_transparent] [scrollbar-width:thin] lg:order-6 lg:mt-2 lg:min-h-0 lg:max-h-none"
             >
               {selected.length === 0 ? (
-                <div className="grid h-full min-h-28 place-items-center rounded-2xl border border-dashed border-cream-200 bg-white/60 p-4 text-center text-sm text-stone-500">
+                <div className="grid h-full min-h-28 place-items-center rounded-2xl border border-dashed border-cream-200 bg-white/60 p-4 text-center text-sm text-stone-500 lg:min-h-20">
                   <span>
                     No services yet — tap one or more <span className="lg:hidden">above</span>
                     <span className="hidden lg:inline">on the left</span>.
                   </span>
                 </div>
               ) : (
-                <ul className="space-y-2 pr-1">
+                <ul className="space-y-2 pr-1 lg:space-y-1.5">
                   {selected.map((s) => (
-                    <li key={s.id} className="flex items-center gap-3 rounded-2xl bg-white px-3 py-2.5 ring-1 ring-cream-200 animate-fade">
-                      <span className={cn('h-8 w-1 shrink-0 rounded-full', CATEGORY_THEME[s.category].dot)} />
+                    <li key={s.id} className="flex items-center gap-3 rounded-2xl bg-white px-3 py-2.5 ring-1 ring-cream-200 animate-fade lg:gap-2.5 lg:rounded-xl lg:py-1.5 lg:pl-2.5 lg:pr-1.5">
+                      <span className={cn('h-8 w-1 shrink-0 rounded-full lg:h-5', CATEGORY_THEME[s.category].dot)} />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-wine-950">{s.name}</p>
-                        <p className="text-xs text-stone-500">
+                        <p className="truncate text-sm font-semibold text-wine-950 lg:text-[13px]">{s.name}</p>
+                        <p className="text-xs text-stone-500 lg:hidden">
                           {categoryById(s.category).name} · {minutesLabel(s.durationMin)}
                         </p>
                       </div>
-                      <span className="text-sm font-bold text-wine-950">{money(servicePrice(s))}</span>
+                      <span className="whitespace-nowrap text-sm font-bold text-wine-950 lg:text-[13px]">{money(servicePrice(s))}</span>
                       <button
                         type="button"
                         onClick={() => toggle(s.id)}
                         aria-label={`Remove ${s.name}`}
-                        className="grid size-7 place-items-center rounded-full text-stone-400 transition hover:bg-wine-50 hover:text-wine-700"
+                        className="grid size-7 shrink-0 place-items-center rounded-full text-stone-400 transition hover:bg-wine-50 hover:text-wine-700"
                       >
                         <X className="size-4" />
                       </button>
@@ -436,7 +450,7 @@ function GenerateTokenCard() {
             </div>
 
             {selected.length > 0 && (
-              <div className="mt-4 flex items-end justify-between border-t border-dashed border-cream-200 pt-3">
+              <div className="mt-4 flex items-end justify-between border-t border-dashed border-cream-200 pt-3 lg:order-2 lg:mt-3">
                 <span className="text-sm text-stone-600">
                   {selected.length} {selected.length === 1 ? 'service' : 'services'} · {minutesLabel(totalMin)}
                 </span>
@@ -446,12 +460,12 @@ function GenerateTokenCard() {
 
             <Button
               size="lg"
-              className={cn('mt-4 w-full text-[17px]', selected.length === 0 && 'opacity-60')}
+              className={cn('mt-4 w-full text-[17px] lg:order-3 lg:mt-3', selected.length === 0 && 'opacity-60')}
               onClick={generate}
             >
               <Tag className="size-5" /> Generate Token
             </Button>
-            <p className={cn('mt-2.5 text-center text-xs', selected.length === 0 ? 'font-semibold text-red-600' : 'text-stone-500')}>
+            <p className={cn('mt-2.5 text-center text-xs lg:order-4', selected.length === 0 ? 'font-semibold text-red-600' : 'text-stone-500 lg:hidden')}>
               {selected.length === 0 ? 'Select at least one service to generate a token' : 'Next: confirm your WhatsApp number · takes under a minute'}
             </p>
           </div>
@@ -629,22 +643,14 @@ function Branches() {
               <Clock className="size-4 text-wine-700" /> {hoursLabel()}
             </p>
             <p className="mt-1 pl-6 text-xs font-semibold text-red-500">Closed on {SALON.closedDaysLabel}</p>
-            <div className="mt-5 flex gap-2">
-              <Link
-                to={`/book?branch=${b.id}`}
-                className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-wine-700 text-sm font-semibold text-white transition hover:bg-wine-800"
-              >
-                <CalendarDays className="size-4" /> Book here
-              </Link>
-              <a
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${b.name}, ${b.area}`)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-wine-100 px-3.5 text-sm font-semibold text-wine-900 transition hover:bg-wine-50"
-              >
-                <Navigation className="size-4" /> Directions
-              </a>
-            </div>
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${b.name}, ${b.area}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-5 inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-wine-100 text-sm font-semibold text-wine-900 transition hover:border-wine-200 hover:bg-wine-50"
+            >
+              <Navigation className="size-4" /> Get directions
+            </a>
           </div>
         ))}
       </div>

@@ -11,6 +11,8 @@ export const SALON = {
   openDaysLabel: 'Sat – Thu',
   closedDaysLabel: 'Fridays',
   pointsPerCurrencyUnit: 0.1,
+  /** Share of the bill that must be paid (online or at the salon); the rest may be kept as due. */
+  minPaidPercent: 65,
 }
 
 export interface Country {

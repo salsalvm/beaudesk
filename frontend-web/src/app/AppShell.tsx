@@ -1,12 +1,12 @@
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { CalendarDays, Clock, Crown, House, LogOut, MapPin, Scissors, Star, Ticket, UserRound } from 'lucide-react'
-import { Button, Logo } from '@/components/ui'
+import { Logo } from '@/components/ui'
 import { BRANCHES } from '@/data/catalog'
-import { useCurrentCustomer, useDb } from '@/data/db'
-import { useDraft } from '@/features/booking/draft'
+import { useCurrentCustomer } from '@/data/db'
 import { SALON } from '@/lib/config'
 import { formatPhone, hoursLabel, initials, cn } from '@/lib/format'
 import { TokenModalHost } from '@/features/token/TokenModal'
+import { LogoutConfirmHost, askLogout } from '@/components/LogoutConfirm'
 import { useEffect, useRef, useState } from 'react'
 
 const NAV = [
@@ -52,14 +52,6 @@ export function AppShell() {
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-2.5">
-            {!inBooking && (
-              <div className="hidden sm:block">
-                <Button size="sm" className="h-10 px-4" onClick={() => navigate('/book')}>
-                  <CalendarDays className="size-[18px]" />
-                  Book Now
-                </Button>
-              </div>
-            )}
             <AccountMenu />
           </div>
         </div>
@@ -91,15 +83,13 @@ export function AppShell() {
       )}
 
       <TokenModalHost />
+      <LogoutConfirmHost />
     </div>
   )
 }
 
 function AccountMenu() {
   const customer = useCurrentCustomer()
-  const setCurrentCustomer = useDb((s) => s.setCurrentCustomer)
-  const resetDraft = useDraft((s) => s.reset)
-  const navigate = useNavigate()
   const { pathname } = useLocation()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -129,10 +119,8 @@ function AccountMenu() {
   }
 
   const logout = () => {
-    setCurrentCustomer(null)
-    resetDraft()
     setOpen(false)
-    navigate('/')
+    askLogout()
   }
 
   return (

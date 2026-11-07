@@ -15,6 +15,7 @@ import {
   Ticket,
   Wallet,
 } from 'lucide-react'
+import { askLogout } from '@/components/LogoutConfirm'
 import { Badge, Button, Progress, WhatsAppIcon } from '@/components/ui'
 import { SERVICES, branchById, planById, serviceById } from '@/data/catalog'
 import { useDb } from '@/data/db'
@@ -38,7 +39,6 @@ interface HistoryItem {
 export function AccountView({ customer }: { customer: Customer }) {
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
-  const setCurrentCustomer = useDb((s) => s.setCurrentCustomer)
   const allBookings = useDb((s) => s.bookings)
   const today = isoDate(new Date())
 
@@ -56,11 +56,6 @@ export function AccountView({ customer }: { customer: Customer }) {
   const tab = (['upcoming', 'history', 'packages'] as const).find((t) => t === params.get('tab')) ?? 'upcoming'
   const setTab = (t: Tab) => setParams(t === 'upcoming' ? {} : { tab: t }, { replace: true })
 
-  const logout = () => {
-    setCurrentCustomer(null)
-    navigate('/')
-  }
-
   const stats = [
     { icon: History, label: 'Visits', value: String(history.length) },
     { icon: Star, label: 'Points', value: String(customer.points) },
@@ -72,7 +67,6 @@ export function AccountView({ customer }: { customer: Customer }) {
     <div className="animate-fade">
       <section className="relative overflow-hidden rounded-[28px] bg-wine-950 p-5 text-white sm:p-7">
         <span className="absolute -right-16 -top-20 size-64 rounded-full bg-wine-700/50 blur-3xl" />
-        <span className="absolute right-[22%] top-6 hidden size-4 rounded-full bg-sun-400 sm:block" />
         <div className="relative flex flex-wrap items-start justify-between gap-4">
           <div className="flex min-w-0 items-center gap-4">
             <span className="grid size-16 shrink-0 place-items-center rounded-2xl bg-sun-400 text-xl font-extrabold text-wine-950 sm:size-[72px] sm:text-2xl">
@@ -98,7 +92,7 @@ export function AccountView({ customer }: { customer: Customer }) {
               <CalendarDays className="size-4" /> New booking
             </Button>
             <button
-              onClick={logout}
+              onClick={askLogout}
               className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-white/10 px-3.5 text-sm font-semibold text-white ring-1 ring-white/15 transition hover:bg-white/15"
             >
               <LogOut className="size-4" /> Log out

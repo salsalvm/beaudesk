@@ -1,5 +1,7 @@
 import { planById, productById, serviceById, servicePrice } from '@/data/catalog'
 import type { BookingLine, Customer, CustomerPackage, ProductLine } from '@/data/types'
+import { SALON } from '@/lib/config'
+import { money } from '@/lib/format'
 import type { BookingDraft } from './draft'
 
 export interface Summary {
@@ -20,18 +22,52 @@ export interface PaymentSplit {
   due: number
 }
 
-const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, Math.round(n)))
+type PayDraft = Pick<BookingDraft, 'payMode' | 'partOnline' | 'duePay' | 'duePaidOnline'>
 
-export function paymentSplit(total: number, draft: Pick<BookingDraft, 'payMode' | 'customPayNow' | 'keepDue'>): PaymentSplit {
-  const online = {
-    full: total,
-    half: Math.ceil(total / 2),
-    custom: clamp(draft.customPayNow, 0, total),
-    salon: 0,
-  }[draft.payMode]
-  const rest = total - online
-  const due = clamp(draft.keepDue, 0, rest)
-  return { online, atSalon: rest - due, due }
+const clamp = (n: number, max: number) => Math.min(max, Math.max(0, Math.round(n)))
+
+/** Least that must be paid (online or at the salon) when keeping the rest as due. */
+export function minPaidFor(total: number) {
+  return Math.ceil((total * SALON.minPaidPercent) / 100)
+}
+
+/** Whole-number percent, rounded down so 64.9% never reads as 65%. */
+export function percentOf(amount: number, total: number) {
+  return total > 0 ? Math.floor((amount * 100) / total) : 0
+}
+
+export function paymentSplit(total: number, draft: PayDraft): PaymentSplit {
+  switch (draft.payMode) {
+    case 'part': {
+      const online = clamp(draft.partOnline, total)
+      return { online, atSalon: total - online, due: 0 }
+    }
+    case 'salon':
+      return { online: 0, atSalon: total, due: 0 }
+    case 'due': {
+      const paid = clamp(draft.duePay, total)
+      const due = total - paid
+      return draft.duePaidOnline ? { online: paid, atSalon: 0, due } : { online: 0, atSalon: paid, due }
+    }
+    default:
+      return { online: total, atSalon: 0, due: 0 }
+  }
+}
+
+export function paymentError(total: number, draft: PayDraft): string | null {
+  if (total === 0) return null
+  if (draft.payMode === 'part') {
+    if (draft.partOnline <= 0) return 'Enter how much you want to pay online.'
+    if (draft.partOnline > total) return `You can pay at most ${money(total)}.`
+  }
+  if (draft.payMode === 'due') {
+    const min = minPaidFor(total)
+    if (draft.duePay < min) {
+      return `Pay at least ${money(min)} (${SALON.minPaidPercent}%). You entered ${percentOf(draft.duePay, total)}%.`
+    }
+    if (draft.duePay > total) return `You can pay at most ${money(total)}.`
+  }
+  return null
 }
 
 export const remaining = (p: CustomerPackage) => Math.max(0, p.total - p.used)
