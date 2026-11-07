@@ -1,0 +1,16 @@
+{
+  "name": "beaudesk",
+  "private": true,
+  "workspaces": [
+    "frontend-web",
+    "backend"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev -w frontend-web",
+    "dev:api": "npm run dev -w backend",
+    "build:web": "npm run build -w frontend-web",
+    "typecheck": "npm run typecheck -w frontend-web && npm run typecheck -w backend",
+    "deploy:web": "npm run build:web && firebase deploy --only hosting",
+    "deploy:api": "npm run deploy -w backend"
+  }
+}

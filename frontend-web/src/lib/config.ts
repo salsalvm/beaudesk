@@ -1,0 +1,28 @@
+export const SALON = {
+  name: 'BeauDesk',
+  currency: 'QAR',
+  locale: 'en-QA',
+  openHour: 9,
+  closeHour: 20,
+  slotMinutes: 30,
+  bookingDays: 14,
+  pointsPerCurrencyUnit: 0.1,
+}
+
+export interface Country {
+  code: string
+  dial: string
+  name: string
+  flag: string
+  digits: number
+  pattern: RegExp
+}
+
+export const COUNTRIES: Country[] = [
+  { code: 'QA', dial: '974', name: 'Qatar', flag: '🇶🇦', digits: 8, pattern: /^[3-7]\d{7}$/ },
+  { code: 'IN', dial: '91', name: 'India', flag: '🇮🇳', digits: 10, pattern: /^[6-9]\d{9}$/ },
+  { code: 'AE', dial: '971', name: 'UAE', flag: '🇦🇪', digits: 9, pattern: /^5\d{8}$/ },
+  { code: 'SA', dial: '966', name: 'Saudi Arabia', flag: '🇸🇦', digits: 9, pattern: /^5\d{8}$/ },
+]
+
+export const DEFAULT_COUNTRY = COUNTRIES[0]
