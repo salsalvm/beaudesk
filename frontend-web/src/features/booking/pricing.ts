@@ -14,6 +14,26 @@ export interface Summary {
   durationMin: number
 }
 
+export interface PaymentSplit {
+  online: number
+  atSalon: number
+  due: number
+}
+
+const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, Math.round(n)))
+
+export function paymentSplit(total: number, draft: Pick<BookingDraft, 'payMode' | 'customPayNow' | 'keepDue'>): PaymentSplit {
+  const online = {
+    full: total,
+    half: Math.ceil(total / 2),
+    custom: clamp(draft.customPayNow, 0, total),
+    salon: 0,
+  }[draft.payMode]
+  const rest = total - online
+  const due = clamp(draft.keepDue, 0, rest)
+  return { online, atSalon: rest - due, due }
+}
+
 export const remaining = (p: CustomerPackage) => Math.max(0, p.total - p.used)
 
 /** Packages that still have sessions and haven't expired. */

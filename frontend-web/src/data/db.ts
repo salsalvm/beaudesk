@@ -89,7 +89,22 @@ export const useDb = create<DbState>()(
       },
       setCurrentCustomer: (id) => set({ currentCustomerId: id }),
     }),
-    { name: 'beaudesk-db', version: 1 },
+    {
+      name: 'beaudesk-db',
+      version: 2,
+      migrate: (persisted, version) => {
+        const state = persisted as DbState
+        if (version < 2) {
+          state.bookings = state.bookings.map((b) => ({
+            ...b,
+            paidOnline: b.paymentMethod === 'none' ? 0 : b.total,
+            payAtSalon: 0,
+            dueKept: 0,
+          }))
+        }
+        return state
+      },
+    },
   ),
 )
 

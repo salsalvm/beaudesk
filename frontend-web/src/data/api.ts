@@ -8,7 +8,7 @@ import { categoryById, serviceById } from './catalog'
 import { useDb } from './db'
 import type { Booking, Customer, PaymentMethod } from './types'
 import type { BookingDraft } from '@/features/booking/draft'
-import { summarize } from '@/features/booking/pricing'
+import { paymentSplit, summarize } from '@/features/booking/pricing'
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
 const uid = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2, 10)}`
@@ -70,6 +70,8 @@ export async function createBooking(
   if (!draft.date || !draft.time || draft.serviceIds.length === 0) throw new Error('Booking is incomplete')
 
   const summary = summarize(draft, customer)
+  const split = paymentSplit(summary.total, draft)
+  if (split.online > 0 && !payment.ref) throw new Error('Payment was not completed')
   const firstService = serviceById(draft.serviceIds[0])!
   const token = db.nextToken(categoryById(firstService.category).tokenLetter)
   const covered = new Set(summary.services.map((l) => l.coveredByPackageId).filter(Boolean))
@@ -85,8 +87,11 @@ export async function createBooking(
     products: summary.products,
     dueCleared: summary.due,
     total: summary.total,
-    paymentMethod: payment.method,
-    paymentRef: payment.ref,
+    paidOnline: split.online,
+    payAtSalon: split.atSalon,
+    dueKept: split.due,
+    paymentMethod: split.online > 0 ? payment.method : 'none',
+    paymentRef: split.online > 0 ? payment.ref : null,
     branchId: draft.branchId,
     stylistId: draft.stylistId,
     date: draft.date,
@@ -95,9 +100,19 @@ export async function createBooking(
     status: 'confirmed',
   }
 
+  const carried = summary.due > 0 ? null : customer.due
+  const due =
+    split.due > 0
+      ? {
+          amount: (carried?.amount ?? 0) + split.due,
+          note: carried ? `Earlier balance + kept from token ${token}` : `Balance kept from token ${token}`,
+          date: booking.date,
+        }
+      : carried
+
   db.upsertCustomer({
     ...customer,
-    due: summary.due > 0 ? null : customer.due,
+    due,
     points: customer.points + Math.floor((summary.servicesTotal + summary.productsTotal) * SALON.pointsPerCurrencyUnit),
     packages: customer.packages.map((p) => (covered.has(p.id) ? { ...p, used: p.used + 1 } : p)),
   })

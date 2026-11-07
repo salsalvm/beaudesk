@@ -36,7 +36,13 @@ export interface BookingDraft {
   addedByPackage: Record<string, string>
   clearDue: boolean
   products: Record<string, number>
+  payMode: PayMode
+  customPayNow: number
+  /** Part of the unpaid balance the customer wants to carry as due instead of paying at the salon. */
+  keepDue: number
 }
+
+export type PayMode = 'full' | 'half' | 'custom' | 'salon'
 
 const initial = (): BookingDraft => ({
   step: 'services',
@@ -55,6 +61,9 @@ const initial = (): BookingDraft => ({
   addedByPackage: {},
   clearDue: true,
   products: {},
+  payMode: 'full',
+  customPayNow: 0,
+  keepDue: 0,
 })
 
 interface DraftStore extends BookingDraft {

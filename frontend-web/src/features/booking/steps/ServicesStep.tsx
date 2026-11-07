@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Check, Clock, MapPin } from 'lucide-react'
 import { ANY_STYLIST, BRANCHES, CATEGORIES, SERVICES, STYLISTS, serviceById } from '@/data/catalog'
+import { CATEGORY_THEME } from '@/lib/categoryTheme'
 import { SALON } from '@/lib/config'
 import { cn, isoDate, minutesLabel, money, timeLabel } from '@/lib/format'
 import { useDraft } from '../draft'
@@ -52,16 +53,17 @@ export function ServicesStep() {
           const Icon = CATEGORY_ICON[c.id]
           const count = d.serviceIds.filter((id) => serviceById(id)?.category === c.id).length
           const active = d.category === c.id
+          const theme = CATEGORY_THEME[c.id]
           return (
             <button
               key={c.id}
               onClick={() => d.set({ category: c.id })}
               className={cn(
                 'flex shrink-0 items-center gap-2.5 rounded-2xl border px-4 py-2.5 text-sm font-semibold transition',
-                active ? 'border-wine-700 bg-wine-700 text-white shadow-soft' : 'border-wine-100 bg-white text-wine-950 hover:border-wine-200',
+                active ? cn(theme.solid, theme.border, 'shadow-soft') : 'border-wine-100 bg-white text-wine-950 hover:border-wine-200',
               )}
             >
-              <Icon className="size-[18px]" />
+              <Icon className={cn('size-[18px]', !active && theme.text)} />
               {c.name}
               {count > 0 && (
                 <span className={cn('grid size-5 place-items-center rounded-full text-[11px]', active ? 'bg-sun-400 text-wine-950' : 'bg-wine-100 text-wine-800')}>
@@ -76,6 +78,7 @@ export function ServicesStep() {
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         {services.map((s) => {
           const on = d.serviceIds.includes(s.id)
+          const theme = CATEGORY_THEME[s.category]
           return (
             <button
               key={s.id}
@@ -83,13 +86,13 @@ export function ServicesStep() {
               aria-pressed={on}
               className={cn(
                 'group flex items-center gap-4 rounded-2xl border bg-white p-4 text-left transition',
-                on ? 'border-wine-600 ring-4 ring-wine-50' : 'border-wine-100 hover:border-wine-200',
+                on ? cn(theme.border, theme.ring, 'ring-4') : 'border-wine-100 hover:border-wine-200',
               )}
             >
               <span
                 className={cn(
                   'grid size-6 shrink-0 place-items-center rounded-lg border-2 transition',
-                  on ? 'border-wine-700 bg-wine-700 text-white' : 'border-wine-200 bg-white text-transparent',
+                  on ? cn(theme.solid, theme.border) : 'border-wine-200 bg-white text-transparent',
                 )}
               >
                 <Check className="size-3.5" strokeWidth={3.5} />

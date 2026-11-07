@@ -5,7 +5,7 @@ import { ArrowRight, Check, Download, LoaderCircle } from 'lucide-react'
 import { Button, CloseButton, Modal, WhatsAppIcon } from '@/components/ui'
 import { useDb } from '@/data/db'
 import type { Booking } from '@/data/types'
-import { formatPhone, initials, money } from '@/lib/format'
+import { cn, formatPhone, initials, money } from '@/lib/format'
 import { TokenCard } from './TokenCard'
 import { downloadToken, renderTokenPng, shareTokenOnWhatsApp } from './share'
 
@@ -30,6 +30,15 @@ export function TokenModalHost() {
     <Modal open={!!booking} onClose={hide} label="Your booking token" width="sm:max-w-[680px]" className="bg-[#fdfafa]">
       {booking && <TokenWindow booking={booking} justBooked={justBooked} onClose={hide} />}
     </Modal>
+  )
+}
+
+function Amount({ label, value, tone }: { label: string; value: number; tone: string }) {
+  return (
+    <div className={cn('rounded-xl px-2 py-2.5', value > 0 ? tone : 'bg-stone-50 text-stone-400')}>
+      <p className="text-[11px] font-semibold uppercase tracking-wide opacity-75">{label}</p>
+      <p className="mt-0.5 text-[15px] font-extrabold">{money(value)}</p>
+    </div>
   )
 }
 
@@ -111,6 +120,14 @@ function TokenWindow({ booking, justBooked, onClose }: { booking: Booking; justB
           </div>
         </div>
 
+        {booking.total > 0 && (
+          <div className="grid grid-cols-3 gap-2 rounded-2xl border border-wine-100 bg-white p-2.5 text-center">
+            <Amount label="Paid online" value={booking.paidOnline} tone="bg-wine-50 text-wine-800" />
+            <Amount label="Pay at salon" value={booking.payAtSalon} tone="bg-sun-100 text-wine-950" />
+            <Amount label="Kept as due" value={booking.dueKept} tone="bg-stone-100 text-stone-700" />
+          </div>
+        )}
+
         <div className="rounded-2xl border border-wine-100 bg-white p-3.5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <Button variant="wine" size="lg" className="w-full sm:w-auto sm:flex-1" onClick={share} disabled={preparing}>
@@ -144,9 +161,11 @@ function TokenWindow({ booking, justBooked, onClose }: { booking: Booking; justB
         </div>
 
         <p className="text-[12px] text-stone-400">
-          {booking.total > 0
-            ? `Paid ${money(booking.total)} · ${METHOD_LABEL[booking.paymentMethod]}${booking.paymentRef ? ` · Ref ${booking.paymentRef}` : ''}`
-            : 'Covered by your package · nothing to pay'}
+          {booking.total === 0
+            ? 'Covered by your package · nothing to pay'
+            : booking.paidOnline > 0
+              ? `Paid ${money(booking.paidOnline)} · ${METHOD_LABEL[booking.paymentMethod]}${booking.paymentRef ? ` · Ref ${booking.paymentRef}` : ''}`
+              : 'Nothing paid online'}
           {' · '}Each booking gets its own unique token.
         </p>
       </div>

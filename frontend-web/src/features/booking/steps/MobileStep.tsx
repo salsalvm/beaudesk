@@ -59,19 +59,21 @@ export function MobileStep() {
             hint="Use the number you have on WhatsApp — your token is shared there."
           >
             <div className="flex gap-2">
-              <select
-                value={d.dial}
-                onChange={(e) => d.set({ dial: e.target.value, phone: '' })}
-                className={cn(inputClass, 'w-[118px] shrink-0 px-3')}
-                aria-label="Country code"
-              >
-                {COUNTRIES.map((c) => (
-                  <option key={c.code} value={c.dial}>
-                    {c.flag} +{c.dial}
-                  </option>
-                ))}
-              </select>
-              <div className="relative flex-1">
+              <div className="w-[132px] shrink-0">
+                <select
+                  value={d.dial}
+                  onChange={(e) => d.set({ dial: e.target.value, phone: '' })}
+                  className={cn(inputClass, 'font-semibold')}
+                  aria-label="Country code"
+                >
+                  {COUNTRIES.map((c) => (
+                    <option key={c.code} value={c.dial}>
+                      {c.flag} +{c.dial}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="relative min-w-0 flex-1">
                 <Smartphone className="pointer-events-none absolute left-4 top-1/2 size-[18px] -translate-y-1/2 text-stone-400" />
                 <input
                   autoFocus

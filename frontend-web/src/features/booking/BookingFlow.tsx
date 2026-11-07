@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { ArrowLeft } from 'lucide-react'
-import { serviceById, type CategoryId } from '@/data/catalog'
+import { branchById, serviceById, type CategoryId } from '@/data/catalog'
 import { useDraft } from './draft'
 import { Stepper, SummaryPanel, useDraftCustomer } from './parts'
 import { ServicesStep } from './steps/ServicesStep'
@@ -21,13 +21,16 @@ export function BookingFlow() {
   useEffect(() => {
     const service = params.get('service')
     const category = params.get('category') as CategoryId | null
-    if (!service && !category) return
-    const s = service ? serviceById(service) : undefined
+    const branch = branchById(params.get('branch') ?? '')
+    if (!service && !category && !branch) return
+    const services = (service ?? '').split(',').flatMap((id) => serviceById(id) ?? [])
+    const s = services[0]
     const date = params.get('date')
     const time = params.get('time')
     d.reset({
       category: s?.category ?? (category && CATEGORY_IDS.includes(category) ? category : 'hair'),
-      serviceIds: s ? [s.id] : [],
+      serviceIds: [...new Set(services.map((x) => x.id))],
+      ...(branch && { branchId: branch.id }),
       date,
       time,
       step: s && date && time ? 'mobile' : 'services',

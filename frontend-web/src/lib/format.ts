@@ -34,6 +34,10 @@ export function timeLabel(hhmm: string) {
   return `${String(hour).padStart(2, '0')}:${String(m).padStart(2, '0')} ${suffix}`
 }
 
+export function hourLabel(h: number) {
+  return `${h % 12 === 0 ? 12 : h % 12} ${h >= 12 ? 'PM' : 'AM'}`
+}
+
 export function appointmentLabel(date: string, time: string) {
   return `${dayLabel(date)} · ${timeLabel(time)}`
 }

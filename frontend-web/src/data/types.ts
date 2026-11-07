@@ -59,6 +59,10 @@ export interface Booking {
   products: ProductLine[]
   dueCleared: number
   total: number
+  /** `total` split three ways: charged online now, collected at reception, or added to the customer's due. */
+  paidOnline: number
+  payAtSalon: number
+  dueKept: number
   paymentMethod: PaymentMethod
   paymentRef: string | null
   branchId: string

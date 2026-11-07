@@ -1,10 +1,13 @@
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router'
-import { CalendarDays, Crown, House, Scissors, Ticket, UserRound } from 'lucide-react'
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
+import { CalendarDays, Clock, Crown, House, LogOut, MapPin, Scissors, Star, Ticket, UserRound } from 'lucide-react'
 import { Button, Logo } from '@/components/ui'
-import { useCurrentCustomer } from '@/data/db'
-import { initials, cn } from '@/lib/format'
+import { BRANCHES } from '@/data/catalog'
+import { useCurrentCustomer, useDb } from '@/data/db'
+import { useDraft } from '@/features/booking/draft'
+import { SALON } from '@/lib/config'
+import { formatPhone, hourLabel, initials, cn } from '@/lib/format'
 import { TokenModalHost } from '@/features/token/TokenModal'
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 const NAV = [
   { to: '/', label: 'Home', icon: House },
@@ -16,7 +19,6 @@ const NAV = [
 export function AppShell() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
-  const customer = useCurrentCustomer()
   const inBooking = pathname.startsWith('/book')
 
   useEffect(() => {
@@ -56,20 +58,16 @@ export function AppShell() {
                 Book Now
               </Button>
             )}
-            <NavLink
-              to="/bookings"
-              aria-label="My account"
-              className="grid size-10 place-items-center rounded-full bg-wine-50 text-sm font-bold text-wine-700 ring-1 ring-wine-100"
-            >
-              {customer ? initials(customer.name) : <UserRound className="size-5" />}
-            </NavLink>
+            <AccountMenu />
           </div>
         </div>
       </header>
 
-      <main className={cn('mx-auto max-w-6xl px-3 pt-5 sm:px-6', inBooking ? 'pb-10' : 'pb-28 md:pb-12')}>
+      <main className={cn('mx-auto max-w-6xl px-3 pt-5 sm:px-6', inBooking ? 'pb-10' : 'pb-16')}>
         <Outlet />
       </main>
+
+      {!inBooking && <Footer />}
 
       {!inBooking && (
         <nav className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-wine-100 bg-white/95 backdrop-blur md:hidden">
@@ -92,6 +90,156 @@ export function AppShell() {
 
       <TokenModalHost />
     </div>
+  )
+}
+
+function AccountMenu() {
+  const customer = useCurrentCustomer()
+  const setCurrentCustomer = useDb((s) => s.setCurrentCustomer)
+  const resetDraft = useDraft((s) => s.reset)
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => setOpen(false), [pathname])
+
+  useEffect(() => {
+    if (!open) return
+    const onPointer = (e: PointerEvent) => !ref.current?.contains(e.target as Node) && setOpen(false)
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
+    document.addEventListener('pointerdown', onPointer)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('pointerdown', onPointer)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  const avatarClass = 'grid size-10 place-items-center rounded-full bg-wine-50 text-sm font-bold text-wine-700 ring-1 ring-wine-100 transition hover:ring-wine-300'
+
+  if (!customer) {
+    return (
+      <Link to="/bookings" aria-label="Sign in to see your bookings" className={avatarClass}>
+        <UserRound className="size-5" />
+      </Link>
+    )
+  }
+
+  const logout = () => {
+    setCurrentCustomer(null)
+    resetDraft()
+    setOpen(false)
+    navigate('/')
+  }
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="Account menu"
+        className={cn(avatarClass, open && 'ring-2 ring-wine-300')}
+      >
+        {initials(customer.name)}
+      </button>
+      {open && (
+        <div role="menu" className="absolute right-0 top-12 z-40 w-64 animate-pop overflow-hidden rounded-2xl border border-wine-100 bg-white shadow-lift">
+          <div className="flex items-center gap-3 bg-wine-50/70 px-4 py-3.5">
+            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-sun-400 text-sm font-extrabold text-wine-950">
+              {initials(customer.name)}
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold text-wine-950">{customer.name}</p>
+              <p className="text-xs text-stone-500">{formatPhone(customer.dial, customer.phone)}</p>
+            </div>
+          </div>
+          <div className="flex items-center justify-between border-b border-wine-50 px-4 py-2.5 text-xs">
+            <span className="flex items-center gap-1.5 text-stone-500">
+              <Star className="size-3.5 fill-sun-400 text-sun-400" /> Loyalty points
+            </span>
+            <span className="font-bold text-wine-950">{customer.points}</span>
+          </div>
+          <div className="p-1.5">
+            <MenuLink to="/bookings" icon={<CalendarDays className="size-4" />} label="My bookings" />
+            <MenuLink to="/memberships" icon={<Crown className="size-4" />} label="Memberships" />
+            <button
+              type="button"
+              role="menuitem"
+              onClick={logout}
+              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+            >
+              <LogOut className="size-4" /> Log out
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function MenuLink({ to, icon, label }: { to: string; icon: React.ReactNode; label: string }) {
+  return (
+    <Link
+      to={to}
+      role="menuitem"
+      className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-wine-950 transition hover:bg-wine-50"
+    >
+      <span className="text-wine-700">{icon}</span>
+      {label}
+    </Link>
+  )
+}
+
+function Footer() {
+  const hours = `${hourLabel(SALON.openHour)} – ${hourLabel(SALON.closeHour)}`
+  return (
+    <footer className="bg-wine-950 pb-24 text-wine-100 md:pb-0">
+      <div className="mx-auto grid max-w-6xl gap-10 px-5 py-12 sm:px-6 md:grid-cols-[1.4fr_1fr_1.2fr]">
+        <div>
+          <Logo light />
+          <p className="mt-4 max-w-xs text-sm leading-relaxed text-wine-200">
+            Book hair, nails, skin and makeup appointments in a minute and get your visit token on WhatsApp.
+          </p>
+          <p className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1.5 text-xs font-semibold text-white ring-1 ring-white/10">
+            <Clock className="size-3.5 text-sun-400" /> Open daily · {hours}
+          </p>
+        </div>
+        <nav aria-label="Footer">
+          <h3 className="text-xs font-bold uppercase tracking-[0.1em] text-sun-400">Explore</h3>
+          <ul className="mt-4 space-y-2.5 text-sm">
+            {[...NAV, { to: '/book', label: 'Book an appointment' }].map((item) => (
+              <li key={item.to}>
+                <Link to={item.to} className="transition hover:text-white">
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-[0.1em] text-sun-400">Branches</h3>
+          <ul className="mt-4 space-y-3 text-sm">
+            {BRANCHES.map((b) => (
+              <li key={b.id} className="flex items-start gap-2.5">
+                <MapPin className="mt-0.5 size-4 shrink-0 text-wine-300" />
+                <span>
+                  <span className="block font-semibold text-white">{b.name}</span>
+                  <span className="text-wine-200">{b.area}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+      <div className="border-t border-white/10">
+        <p className="mx-auto max-w-6xl px-5 py-5 text-xs text-wine-300 sm:px-6">
+          © {new Date().getFullYear()} {SALON.name}. All rights reserved.
+        </p>
+      </div>
+    </footer>
   )
 }
 

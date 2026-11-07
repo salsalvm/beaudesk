@@ -2,6 +2,7 @@ import { forwardRef } from 'react'
 import { Clock, Sparkles } from 'lucide-react'
 import { ANY_STYLIST, branchById, categoryById, serviceById, stylistById } from '@/data/catalog'
 import type { Booking } from '@/data/types'
+import { CATEGORY_THEME, categoryOfToken } from '@/lib/categoryTheme'
 import { appointmentLabel, cn } from '@/lib/format'
 
 export function tokenFacts(b: Booking) {
@@ -22,6 +23,8 @@ export function tokenFacts(b: Booking) {
 export const TokenCard = forwardRef<HTMLDivElement, { booking: Booking; className?: string; notchColor?: string }>(
   function TokenCard({ booking, className, notchColor = '#ffffff' }, ref) {
     const f = tokenFacts(booking)
+    const category = categoryById(categoryOfToken(booking.token))
+    const theme = CATEGORY_THEME[category.id]
     return (
       <div
         ref={ref}
@@ -32,7 +35,10 @@ export const TokenCard = forwardRef<HTMLDivElement, { booking: Booking; classNam
 
         <div className="relative px-6 pb-6 pt-6 @lg:px-8 @lg:pt-7">
           <div className="flex items-center justify-between gap-3">
-            <span className="text-[13px] font-semibold uppercase tracking-[0.06em] text-wine-900/60">Your visit token</span>
+            <span className="flex items-center gap-2.5">
+              <span className="text-[13px] font-semibold uppercase tracking-[0.06em] text-wine-900/60">Your visit token</span>
+              <span className={cn('rounded-full px-2.5 py-0.5 text-[12px] font-bold', theme.solid)}>{category.name}</span>
+            </span>
             <span className="inline-flex items-center gap-2 rounded-full bg-wine-50 px-3.5 py-1.5 text-[12px] font-bold uppercase tracking-wide text-wine-700 ring-1 ring-wine-100">
               <span className="size-2 rounded-full bg-wine-600" />
               Ready to show
@@ -42,7 +48,7 @@ export const TokenCard = forwardRef<HTMLDivElement, { booking: Booking; classNam
           <div className="mt-4 flex items-center gap-5">
             <div className="min-w-0 flex-1">
               <div className="whitespace-nowrap text-[60px] font-extrabold leading-[0.95] tracking-tight text-wine-950 @md:text-[68px] @xl:text-[84px]">{booking.token}</div>
-              <span className="mt-3 block h-[6px] w-[85%] max-w-[260px] rounded-full bg-sun-400" />
+              <span className={cn('mt-3 block h-[6px] w-[85%] max-w-[260px] rounded-full', theme.dot)} />
               <p className="mt-4 text-[17px] font-semibold leading-snug text-wine-950 @lg:text-[19px]">{f.services}</p>
             </div>
             <div className="relative hidden w-[40%] shrink-0 @md:block @xl:w-[44%]">

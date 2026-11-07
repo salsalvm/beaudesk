@@ -26,6 +26,16 @@
   --color-sun-500: #f5b700;
   --color-sun-600: #d39900;
 
+  /* Nails accent: coral */
+  --color-coral-50: #fff4f1;
+  --color-coral-100: #ffe5de;
+  --color-coral-200: #ffc9b9;
+  --color-coral-300: #ffa58b;
+  --color-coral-400: #ff7f5c;
+  --color-coral-500: #f4623a;
+  --color-coral-600: #dd4a22;
+  --color-coral-700: #b83a19;
+
   /* Token card cream */
   --color-cream-50: #fffbf2;
   --color-cream-100: #fff5e2;

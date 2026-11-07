@@ -2,7 +2,8 @@ import { Link } from 'react-router'
 import { ChevronRight, Clock } from 'lucide-react'
 import { CATEGORIES, SERVICES } from '@/data/catalog'
 import { CATEGORY_ICON } from '@/features/booking/parts'
-import { minutesLabel, money } from '@/lib/format'
+import { CATEGORY_THEME } from '@/lib/categoryTheme'
+import { cn, minutesLabel, money } from '@/lib/format'
 
 export function ServicesPage() {
   return (
@@ -15,13 +16,13 @@ export function ServicesPage() {
           const Icon = CATEGORY_ICON[c.id]
           return (
             <section key={c.id} className="overflow-hidden rounded-3xl border border-wine-100 bg-white shadow-soft">
-              <div className="flex items-center gap-4 bg-gradient-to-r from-wine-700 to-wine-600 p-4 text-white sm:p-5">
+              <div className={cn('flex items-center gap-4 bg-gradient-to-r p-4 text-white sm:p-5', CATEGORY_THEME[c.id].gradient)}>
                 <span className="grid size-12 place-items-center rounded-2xl bg-sun-400 text-wine-950">
                   <Icon className="size-5" />
                 </span>
                 <div className="flex-1">
                   <h2 className="text-lg font-bold">{c.name}</h2>
-                  <p className="text-sm text-wine-100">{c.blurb}</p>
+                  <p className="text-sm text-white/80">{c.blurb}</p>
                 </div>
                 <img src={c.photo} alt="" className="hidden h-14 w-24 rounded-xl object-cover sm:block" />
               </div>

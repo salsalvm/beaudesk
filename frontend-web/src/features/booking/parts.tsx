@@ -5,7 +5,7 @@ import { ANY_STYLIST, branchById, stylistById, type CategoryId } from '@/data/ca
 import { useDb } from '@/data/db'
 import { appointmentLabel, cn, minutesLabel, money } from '@/lib/format'
 import { STEPS, useDraft, type Step } from './draft'
-import { summarize } from './pricing'
+import { paymentSplit, summarize } from './pricing'
 
 export const CATEGORY_ICON: Record<CategoryId, typeof Scissors> = {
   hair: Scissors,
@@ -79,6 +79,7 @@ export function StepFooter({
   secondary,
   onSecondary,
   showTotal = true,
+  total,
 }: {
   primary: ReactNode
   onPrimary: () => void
@@ -87,6 +88,7 @@ export function StepFooter({
   secondary?: string
   onSecondary?: () => void
   showTotal?: boolean
+  total?: { label: string; value: string }
 }) {
   const summary = useSummary()
   return (
@@ -96,8 +98,8 @@ export function StepFooter({
         <div className="mx-auto flex max-w-6xl items-center gap-3 pb-3 lg:pb-0">
           {showTotal && (
             <div className="min-w-0 lg:hidden">
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-stone-400">Total</div>
-              <div className="text-lg font-bold text-wine-950">{money(summary.total)}</div>
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-stone-400">{total?.label ?? 'Total'}</div>
+              <div className="text-lg font-bold text-wine-950">{total?.value ?? money(summary.total)}</div>
             </div>
           )}
           <div className="ml-auto flex flex-1 items-center justify-end gap-2.5 lg:flex-none">
@@ -122,6 +124,8 @@ export function SummaryPanel() {
   const summary = summarize(draft, customer)
   const stylist = draft.stylistId === ANY_STYLIST ? 'First available' : stylistById(draft.stylistId)?.name
   const pendingDue = customer?.due && !draft.clearDue ? customer.due.amount : 0
+  const split = paymentSplit(summary.total, draft)
+  const showSplit = draft.step === 'payment' && split.online !== summary.total
 
   return (
     <aside className="sticky top-28 hidden self-start lg:block">
@@ -153,6 +157,13 @@ export function SummaryPanel() {
               <span className="font-semibold text-wine-950">Total to pay</span>
               <span className="text-xl font-bold text-wine-950">{money(summary.total)}</span>
             </div>
+            {showSplit && (
+              <div className="mt-3 space-y-1.5 rounded-2xl bg-wine-50/60 p-3 ring-1 ring-wine-100">
+                <Row label="Online now" value={money(split.online)} />
+                {split.atSalon > 0 && <Row label="At the salon" value={money(split.atSalon)} />}
+                {split.due > 0 && <Row label="Kept as due" value={money(split.due)} highlight />}
+              </div>
+            )}
             {pendingDue > 0 && <p className="mt-2 text-xs text-stone-500">Due of {money(pendingDue)} left for later.</p>}
           </div>
         </div>
