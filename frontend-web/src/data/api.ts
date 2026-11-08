@@ -4,10 +4,10 @@
  * when swapping in real HTTP calls.
  */
 import { SALON } from '@/lib/config'
-import { isClosedDay, isoDate } from '@/lib/format'
+import { isClosedDay, isoDate, timeLabel } from '@/lib/format'
 import { planById, serviceById } from './catalog'
 import { useDb } from './db'
-import { machineFree } from './machines'
+import { machineFree, machineFreesAt } from './machines'
 import type { Booking, Customer, CustomerPackage, PaymentMethod } from './types'
 import type { BookingDraft } from '@/features/booking/draft'
 import { paymentError, paymentSplit, summarize } from '@/features/booking/pricing'
@@ -100,7 +100,10 @@ export async function createBooking(
   if (draft.date !== isoDate(new Date())) throw new Error('Tokens can only be generated for today.')
   if (isClosedDay(draft.date)) throw new Error(`The salon is closed today (closed on ${SALON.closedDaysLabel}). Please come back tomorrow.`)
   const full = draft.serviceIds.find((id) => serviceById(id)?.machine && machineFree(db.bookings, id, draft.date!, draft.time!, draft.branchId) === 0)
-  if (full) throw new Error(`${serviceById(full)?.name} is fully booked at this time. Please pick another time.`)
+  if (full) {
+    const freesAt = machineFreesAt(db.bookings, full, draft.date, draft.time, draft.branchId)
+    throw new Error(`${serviceById(full)?.name} is in use at this time${freesAt ? ` — free at ${timeLabel(freesAt)}` : ''}. Please pick another time.`)
+  }
 
   const summary = summarize(draft, customer)
   const payError = paymentError(summary.total, draft)

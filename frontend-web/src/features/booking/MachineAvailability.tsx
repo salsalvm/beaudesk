@@ -1,7 +1,21 @@
 import { cn } from '@/lib/format'
 
 /** "Available at 3 PM · 2 of 3 open" pill for a machine at the chosen time. */
-export function MachineAvailability({ free, total, at, place }: { free: number; total: number; at?: string; place?: string }) {
+export function MachineAvailability({
+  free,
+  total,
+  at,
+  place,
+  freesAt,
+}: {
+  free: number
+  total: number
+  at?: string
+  place?: string
+  /** When a unit in use at `at` frees up today. */
+  freesAt?: string
+}) {
+  const allInUse = total === 1 ? 'In use' : `All ${total} in use`
   const where = place ? ` in ${place}` : ''
   const tone = !at ? 'bg-stone-50 text-stone-600 ring-stone-200' : free === 0 ? 'bg-red-50 text-red-700 ring-red-100' : 'bg-emerald-50 text-emerald-700 ring-emerald-100'
   return (
@@ -10,8 +24,8 @@ export function MachineAvailability({ free, total, at, place }: { free: number; 
       {!at
         ? `${total} machine${total === 1 ? '' : 's'}${where}`
         : free === 0
-          ? `Fully booked at ${at}${where}`
-          : `Available at ${at}${where} · ${free} of ${total} open`}
+          ? `${allInUse} at ${at}${where}${freesAt ? ` · free at ${freesAt}` : ' · booked for today'}`
+          : `Available at ${at}${where} · ${free} of ${total} open${free < total && freesAt ? ` · more at ${freesAt}` : ''}`}
     </span>
   )
 }

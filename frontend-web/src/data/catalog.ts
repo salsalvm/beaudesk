@@ -87,25 +87,25 @@ export const SERVICES: Service[] = [
 
 /** Salon machines a customer can reserve for a session at a chosen time. */
 export const MACHINES: Service[] = [
-  { id: 'mc-hair-steamer', category: 'hair', name: 'Ozone hair steamer', description: 'Warm ozone steam that opens the cuticle so masks and treatments soak in.', durationMin: 30, price: 60, machine: { units: 3, photo: '/img/machine-hair-steamer.jpg' } },
-  { id: 'mc-hair-rollerball', category: 'hair', name: 'Rollerball colour processor', description: 'Infrared heat that speeds up colour and treatment processing evenly.', durationMin: 30, price: 50, machine: { units: 2, photo: '/img/machine-rollerball.jpg' } },
-  { id: 'mc-hair-hood-dryer', category: 'hair', name: 'Hooded hair dryer', description: 'Gentle, even hood drying for rollers, sets and deep-conditioning masks.', durationMin: 30, price: 40, machine: { units: 4, photo: '/img/machine-hood-dryer.jpg' } },
+  { id: 'mc-hair-steamer', category: 'hair', name: 'Ozone hair steamer', description: 'Warm ozone steam that opens the cuticle so masks and treatments soak in.', durationMin: 30, price: 60, machine: { units: 4, photo: '/img/machine-hair-steamer.jpg' } },
+  { id: 'mc-hair-rollerball', category: 'hair', name: 'Rollerball colour processor', description: 'Infrared heat that speeds up colour and treatment processing evenly.', durationMin: 30, price: 50, machine: { units: 4, photo: '/img/machine-rollerball.jpg' } },
+  { id: 'mc-hair-hood-dryer', category: 'hair', name: 'Hooded hair dryer', description: 'Gentle, even hood drying for rollers, sets and deep-conditioning masks.', durationMin: 30, price: 40, machine: { units: 6, photo: '/img/machine-hood-dryer.jpg' } },
   { id: 'mc-hair-scalp-mist', category: 'hair', name: 'Scalp micro-mist machine', description: 'Nano-mist that hydrates the scalp and helps treatments absorb deeper.', durationMin: 30, price: 80, machine: { units: 2, photo: '/img/machine-scalp-mist.jpg' } },
 
   { id: 'mc-nails-pedi-spa', category: 'nails', name: 'Pedicure spa chair', description: 'Massage chair with a whirlpool foot bath for a deep, relaxing soak.', durationMin: 45, price: 70, machine: { units: 4, photo: '/img/machine-pedicure-spa.jpg' } },
-  { id: 'mc-nails-led', category: 'nails', name: 'LED gel curing station', description: 'Fast LED lamp station that cures gel polish evenly in minutes.', durationMin: 20, price: 30, machine: { units: 4, photo: '/img/machine-led-gel.jpg' } },
-  { id: 'mc-nails-paraffin', category: 'nails', name: 'Paraffin wax bath', description: 'Warm paraffin dip that softens hands and feet and soothes dry skin.', durationMin: 20, price: 45, machine: { units: 3, photo: '/img/machine-paraffin.jpg' } },
-  { id: 'mc-nails-efile', category: 'nails', name: 'Nail drill (e-file) station', description: 'Precision e-file for shaping, gel removal and smooth cuticle prep.', durationMin: 30, price: 50, machine: { units: 3, photo: '/img/machine-nail-drill.jpg' } },
+  { id: 'mc-nails-led', category: 'nails', name: 'LED gel curing station', description: 'Fast LED lamp station that cures gel polish evenly in minutes.', durationMin: 20, price: 30, machine: { units: 8, photo: '/img/machine-led-gel.jpg' } },
+  { id: 'mc-nails-paraffin', category: 'nails', name: 'Paraffin wax bath', description: 'Warm paraffin dip that softens hands and feet and soothes dry skin.', durationMin: 20, price: 45, machine: { units: 6, photo: '/img/machine-paraffin.jpg' } },
+  { id: 'mc-nails-efile', category: 'nails', name: 'Nail drill (e-file) station', description: 'Precision e-file for shaping, gel removal and smooth cuticle prep.', durationMin: 30, price: 50, machine: { units: 6, photo: '/img/machine-nail-drill.jpg' } },
 
-  { id: 'mc-skin-microderm', category: 'skin', name: 'Microdermabrasion machine', description: 'Diamond-tip exfoliation that lifts dead skin for a smoother, brighter look.', durationMin: 45, price: 220, machine: { units: 2, photo: '/img/machine-microderm.jpg' } },
+  { id: 'mc-skin-microderm', category: 'skin', name: 'Microdermabrasion machine', description: 'Diamond-tip exfoliation that lifts dead skin for a smoother, brighter look.', durationMin: 45, price: 220, machine: { units: 1, photo: '/img/machine-microderm.jpg' } },
   { id: 'mc-skin-led', category: 'skin', name: 'LED light therapy panel', description: 'Red and blue light to calm, clear and rejuvenate the skin.', durationMin: 20, price: 90, machine: { units: 2, photo: '/img/machine-led-therapy.jpg' } },
-  { id: 'mc-skin-steamer', category: 'skin', name: 'Facial steamer (vapozone)', description: 'Warm ozone steam that opens pores before cleansing and extractions.', durationMin: 20, price: 60, machine: { units: 3, photo: '/img/machine-facial-steamer.jpg' } },
+  { id: 'mc-skin-steamer', category: 'skin', name: 'Facial steamer (vapozone)', description: 'Warm ozone steam that opens pores before cleansing and extractions.', durationMin: 20, price: 60, machine: { units: 4, photo: '/img/machine-facial-steamer.jpg' } },
   { id: 'mc-skin-rf', category: 'skin', name: 'RF skin-tightening machine', description: 'Radiofrequency warmth that firms and lifts for a smoother contour.', durationMin: 40, price: 260, machine: { units: 1, photo: '/img/machine-rf-tightening.jpg' } },
 
-  { id: 'mc-makeup-airbrush', category: 'makeup', name: 'Airbrush makeup station', description: 'Feather-light airbrush foundation with a flawless, long-wear finish.', durationMin: 45, price: 180, machine: { units: 1, photo: '/img/machine-airbrush.jpg' } },
-  { id: 'mc-makeup-vanity', category: 'makeup', name: 'Pro-lit vanity station', description: 'Ring-lit mirror station for your own touch-ups before an event.', durationMin: 30, price: 40, machine: { units: 3, photo: '/img/machine-vanity.jpg' } },
-  { id: 'mc-makeup-spray-tan', category: 'makeup', name: 'Spray-tan booth', description: 'Private booth with a fine-mist spray for an even, natural-looking glow.', durationMin: 20, price: 150, machine: { units: 1, photo: '/img/machine-spray-tan.jpg' } },
-  { id: 'mc-makeup-lash', category: 'makeup', name: 'Lash & brow lamp station', description: 'Lash bed with a magnifying LED lamp for lash, brow and tint work.', durationMin: 30, price: 60, machine: { units: 2, photo: '/img/machine-lash-lamp.jpg' } },
+  { id: 'mc-makeup-airbrush', category: 'makeup', name: 'Airbrush makeup station', description: 'Feather-light airbrush foundation with a flawless, long-wear finish.', durationMin: 45, price: 180, machine: { units: 2, photo: '/img/machine-airbrush.jpg' } },
+  { id: 'mc-makeup-vanity', category: 'makeup', name: 'Pro-lit vanity station', description: 'Ring-lit mirror station for your own touch-ups before an event.', durationMin: 30, price: 40, machine: { units: 8, photo: '/img/machine-vanity.jpg' } },
+  { id: 'mc-makeup-spray-tan', category: 'makeup', name: 'Spray-tan booth', description: 'Private booth with a fine-mist spray for an even, natural-looking glow.', durationMin: 20, price: 150, machine: { units: 2, photo: '/img/machine-spray-tan.jpg' } },
+  { id: 'mc-makeup-lash', category: 'makeup', name: 'Lash & brow lamp station', description: 'Lash bed with a magnifying LED lamp for lash, brow and tint work.', durationMin: 30, price: 60, machine: { units: 4, photo: '/img/machine-lash-lamp.jpg' } },
 ]
 
 export const PRODUCTS: Product[] = [

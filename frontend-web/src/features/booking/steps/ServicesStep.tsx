@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { CalendarDays, Check, Cog, MapPin, Moon, Sparkles, Sun, Sunrise } from 'lucide-react'
 import { ANY_STYLIST, BRANCHES, CATEGORIES, MACHINES, SERVICES, STYLISTS, serviceById } from '@/data/catalog'
 import { useDb } from '@/data/db'
-import { machineFree } from '@/data/machines'
+import { machineFree, machineFreesAt } from '@/data/machines'
 import { MachineAvailability } from '../MachineAvailability'
 import { ServicePrice, ServiceTags } from '@/features/services/ServiceTags'
 import { CATEGORY_THEME } from '@/lib/categoryTheme'
@@ -61,6 +61,10 @@ export function ServicesStep() {
   const bookings = useDb((s) => s.bookings)
   const services = (kind === 'services' ? SERVICES : MACHINES).filter((s) => s.category === d.category)
   const freeAt = (id: string) => (d.time ? machineFree(bookings, id, today, d.time, d.branchId) : 0)
+  const freesAt = (id: string) => {
+    const slot = d.time ? machineFreesAt(bookings, id, today, d.time, d.branchId) : null
+    return slot ? timeLabel(slot) : undefined
+  }
   const fullMachines = selected.filter((s) => s.machine && d.time && freeAt(s.id) === 0)
   const branchName = BRANCHES.find((b) => b.id === d.branchId)?.name
   const chosenCats = new Set(selected.map((s) => s.category))
@@ -199,6 +203,7 @@ export function ServicesStep() {
                             total={s.machine.units}
                             at={d.time ? timeLabel(d.time) : undefined}
                             place={branchName}
+                            freesAt={freesAt(s.id)}
                           />
                         </span>
                       ) : (
@@ -345,8 +350,9 @@ export function ServicesStep() {
 
       {fullMachines.length > 0 && d.time && (
         <p role="alert" className="mt-4 text-sm font-semibold text-red-600">
-          {fullMachines.map((s) => s.name).join(', ')} {fullMachines.length === 1 ? 'is' : 'are'} fully booked at {timeLabel(d.time)} in{' '}
-          {branchName} — pick another time or branch, or remove it.
+          {fullMachines.map((s) => s.name).join(', ')} {fullMachines.length === 1 ? 'is' : 'are'} in use at {timeLabel(d.time)} in {branchName}
+          {fullMachines.length === 1 && freesAt(fullMachines[0].id) ? ` — free at ${freesAt(fullMachines[0].id)}` : ''}. Pick another time or branch,
+          or remove it.
         </p>
       )}
 

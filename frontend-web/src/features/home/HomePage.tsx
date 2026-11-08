@@ -43,7 +43,7 @@ import {
   type Service,
 } from '@/data/catalog'
 import { useCurrentCustomer, useDb } from '@/data/db'
-import { machineFree } from '@/data/machines'
+import { machineFree, machineFreesAt } from '@/data/machines'
 import { CATEGORY_ICON } from '@/features/booking/parts'
 import { activePackages, remaining } from '@/features/booking/pricing'
 import { useTokenModal } from '@/features/token/TokenModal'
@@ -202,7 +202,12 @@ function GenerateTokenCard() {
 
   const services = (kind === 'services' ? SERVICES : MACHINES).filter((s) => s.category === category)
   const selected = serviceIds.map((id) => serviceById(id)!)
-  const freeAt = (id: string) => (time ? machineFree(bookings, id, date, time) : 0)
+  const branch = BRANCHES[0]
+  const freeAt = (id: string) => (time ? machineFree(bookings, id, date, time, branch.id) : 0)
+  const freesAt = (id: string) => {
+    const slot = time ? machineFreesAt(bookings, id, date, time, branch.id) : null
+    return slot ? hourLabel(Number(slot.slice(0, 2))) : undefined
+  }
   const fullMachines = selected.filter((s) => s.machine && freeAt(s.id) === 0)
   const totalMin = selected.reduce((m, s) => m + s.durationMin, 0)
   const total = selected.reduce((sum, s) => sum + servicePrice(s), 0)
@@ -342,6 +347,7 @@ function GenerateTokenCard() {
               {kind === 'machines' && (
                 <p className="mb-2.5 text-xs text-stone-500">
                   Reserve a salon machine for your session{time ? ` at ${hourLabel(Number(time.slice(0, 2)))}` : ''} — it's held just for you.
+                  Showing {branch.name}; you can switch branch next.
                 </p>
               )}
               <div className={cn('grid gap-2', kind === 'machines' ? 'grid-cols-2 gap-2.5 sm:gap-3' : 'grid-cols-2 sm:flex sm:flex-wrap')}>
@@ -352,8 +358,9 @@ function GenerateTokenCard() {
                       machine={s}
                       on={serviceIds.includes(s.id)}
                       free={freeAt(s.id)}
-                      total={s.machine!.units * BRANCHES.length}
+                      total={s.machine!.units}
                       at={time ? hourLabel(Number(time.slice(0, 2))) : undefined}
+                      freesAt={freesAt(s.id)}
                       onToggle={() => toggle(s.id)}
                     />
                   ))}
@@ -397,8 +404,10 @@ function GenerateTokenCard() {
               {fullMachines.length > 0 && time && (
                 <p role="alert" className="mt-2.5 flex items-center gap-1.5 text-sm font-semibold text-red-600">
                   <CircleAlert className="size-4 shrink-0" />
-                  {fullMachines.map((s) => s.name).join(', ')} {fullMachines.length === 1 ? 'is' : 'are'} fully booked at{' '}
-                  {hourLabel(Number(time.slice(0, 2)))} — pick another time or remove it.
+                  {fullMachines.map((s) => s.name).join(', ')} {fullMachines.length === 1 ? 'is' : 'are'} in use at{' '}
+                  {hourLabel(Number(time.slice(0, 2)))}
+                  {fullMachines.length === 1 && freesAt(fullMachines[0].id) ? ` — free at ${freesAt(fullMachines[0].id)}` : ''}. Pick another time or
+                  remove it.
                 </p>
               )}
             </div>
@@ -668,6 +677,7 @@ function MachineTile({
   free,
   total,
   at,
+  freesAt,
   onToggle,
 }: {
   machine: Service
@@ -675,18 +685,21 @@ function MachineTile({
   free: number
   total: number
   at?: string
+  /** When a unit in use at `at` frees up today. */
+  freesAt?: string
   onToggle: () => void
 }) {
   const theme = CATEGORY_THEME[m.category]
   const full = !!at && free === 0
   const low = !full && free <= Math.max(1, Math.round(total / 4))
+  const inUse = total - free
   return (
     <button
       type="button"
       onClick={onToggle}
       disabled={full && !on}
       aria-pressed={on}
-      aria-label={`${m.name}, ${money(servicePrice(m))}, ${full ? `fully booked at ${at}` : `${free} of ${total} open`}`}
+      aria-label={`${m.name}, ${money(servicePrice(m))}, ${full ? `in use at ${at}${freesAt ? `, free at ${freesAt}` : ''}` : `${free} of ${total} open`}`}
       className={cn(
         'group flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-white text-left transition disabled:cursor-not-allowed',
         on
@@ -721,8 +734,9 @@ function MachineTile({
           </span>
         )}
         {full && (
-          <span className="absolute inset-x-2 bottom-2 rounded-lg bg-red-600/90 px-2 py-1 text-center text-[11px] font-bold text-white">
-            Fully booked at {at}
+          <span className="absolute inset-x-2 bottom-2 rounded-lg bg-wine-950/85 px-2 py-1 text-center text-[11px] font-bold text-white ring-1 ring-white/15 backdrop-blur">
+            {total === 1 ? 'In use' : `All ${total} in use`} at {at}
+            {freesAt && <span className="text-sun-300"> · free at {freesAt}</span>}
           </span>
         )}
       </span>
@@ -731,7 +745,15 @@ function MachineTile({
         <span className="mt-auto pt-1.5">
           <span className="flex items-center justify-between gap-2 text-[11px] font-semibold">
             <span className={cn(full ? 'text-red-600' : low ? 'text-amber-700' : 'text-emerald-700')}>
-              {!at ? 'Pick a time' : full ? 'Booked' : low ? `Only ${free} left` : `Available · ${at}`}
+              {!at
+                ? 'Pick a time'
+                : full
+                  ? freesAt
+                    ? `${total === 1 ? 'In use' : `All ${total} in use`} · free at ${freesAt}`
+                    : 'Booked today'
+                  : inUse > 0
+                    ? `${low ? `Only ${free} left` : `${inUse} in use`}${freesAt ? ` · more at ${freesAt}` : ''}`
+                    : `Available · ${at}`}
             </span>
             <span className="text-stone-400">
               {free}/{total}
