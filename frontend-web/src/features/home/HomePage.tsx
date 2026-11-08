@@ -8,6 +8,7 @@ import {
   ChevronRight,
   CircleAlert,
   Clock,
+  Cog,
   Crown,
   Gift,
   MapPin,
@@ -30,6 +31,7 @@ import {
   ANY_STYLIST,
   BRANCHES,
   CATEGORIES,
+  MACHINES,
   PACKAGE_PLANS,
   SERVICES,
   categoryById,
@@ -38,8 +40,10 @@ import {
   servicePrice,
   stylistById,
   type CategoryId,
+  type Service,
 } from '@/data/catalog'
 import { useCurrentCustomer, useDb } from '@/data/db'
+import { machineFree } from '@/data/machines'
 import { CATEGORY_ICON } from '@/features/booking/parts'
 import { activePackages, remaining } from '@/features/booking/pricing'
 import { useTokenModal } from '@/features/token/TokenModal'
@@ -69,6 +73,7 @@ export function HomePage() {
       </div>
       <div className="mt-16 space-y-16">
         <HowItWorks />
+        <OurMachines />
         <Categories />
         <PopularServices />
         <YourBeauDesk />
@@ -190,11 +195,15 @@ function GenerateTokenCard() {
   const [dayNum, month] = rest.split(' ')
 
   const [category, setCategory] = useState<CategoryId>('hair')
+  const [kind, setKind] = useState<'services' | 'machines'>('machines')
   const [serviceIds, setServiceIds] = useState<string[]>([])
   const [time, setTime] = useState<string | undefined>(() => openTimes[0])
+  const bookings = useDb((s) => s.bookings)
 
-  const services = SERVICES.filter((s) => s.category === category)
+  const services = (kind === 'services' ? SERVICES : MACHINES).filter((s) => s.category === category)
   const selected = serviceIds.map((id) => serviceById(id)!)
+  const freeAt = (id: string) => (time ? machineFree(bookings, id, date, time) : 0)
+  const fullMachines = selected.filter((s) => s.machine && freeAt(s.id) === 0)
   const totalMin = selected.reduce((m, s) => m + s.durationMin, 0)
   const total = selected.reduce((sum, s) => sum + servicePrice(s), 0)
 
@@ -212,7 +221,7 @@ function GenerateTokenCard() {
 
   const toggle = (id: string) => setServiceIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]))
   const generate = () => {
-    if (!time) return
+    if (!time || fullMachines.length > 0) return
     if (selected.length === 0) {
       setAttempts((n) => n + 1)
       servicesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -238,14 +247,14 @@ function GenerateTokenCard() {
           <h2 id="token-title" className="text-xl font-extrabold tracking-tight text-wine-950 sm:text-2xl">
             Generate your visit token
           </h2>
-          <p className="text-sm text-stone-500">Choose your services and time — we'll send the token to your WhatsApp.</p>
+          <p className="text-sm text-stone-500">Choose services or a machine and your time — we'll send the token to your WhatsApp.</p>
         </div>
         <span className="hidden items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100 md:inline-flex">
           <WhatsAppIcon className="size-4" /> Token on WhatsApp
         </span>
       </div>
 
-      <div className="mt-6 grid gap-6 lg:mt-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:gap-8">
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:mt-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:gap-8">
         <div className="min-w-0 space-y-6 lg:space-y-5">
           <div>
             <StepLabel n={1}>Category</StepLabel>
@@ -298,10 +307,57 @@ function GenerateTokenCard() {
                   )
                 }
               >
-                Services
+                Machines & services
               </StepLabel>
-              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-                {services.map((s) => {
+              <div role="tablist" aria-label="Book a service or a machine" className="mb-3 grid grid-cols-2 gap-1 rounded-2xl bg-wine-50/70 p-1 ring-1 ring-wine-100 sm:inline-grid">
+                {(
+                  [
+                    { id: 'machines', label: 'Machines', icon: Cog, list: MACHINES },
+                    { id: 'services', label: 'Services', icon: Sparkles, list: SERVICES },
+                  ] as const
+                ).map((tab) => {
+                  const on = kind === tab.id
+                  const picked = selected.filter((s) => tab.list.includes(s)).length
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={on}
+                      onClick={() => setKind(tab.id)}
+                      className={cn(
+                        'inline-flex h-9 items-center justify-center gap-1.5 rounded-xl px-4 text-[13px] font-bold transition',
+                        on ? 'bg-white text-wine-950 shadow-soft ring-1 ring-wine-100' : 'text-wine-800/70 hover:text-wine-950',
+                      )}
+                    >
+                      <tab.icon className={cn('size-4', on ? 'text-wine-700' : 'text-wine-400')} />
+                      {tab.label}
+                      {picked > 0 && (
+                        <span className="grid size-5 place-items-center rounded-full bg-sun-400 text-[11px] font-bold text-wine-950">{picked}</span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+              {kind === 'machines' && (
+                <p className="mb-2.5 text-xs text-stone-500">
+                  Reserve a salon machine for your session{time ? ` at ${hourLabel(Number(time.slice(0, 2)))}` : ''} — it's held just for you.
+                </p>
+              )}
+              <div className={cn('grid gap-2', kind === 'machines' ? 'grid-cols-2 gap-2.5 sm:gap-3' : 'grid-cols-2 sm:flex sm:flex-wrap')}>
+                {kind === 'machines' &&
+                  services.map((s) => (
+                    <MachineTile
+                      key={s.id}
+                      machine={s}
+                      on={serviceIds.includes(s.id)}
+                      free={freeAt(s.id)}
+                      total={s.machine!.units * BRANCHES.length}
+                      at={time ? hourLabel(Number(time.slice(0, 2))) : undefined}
+                      onToggle={() => toggle(s.id)}
+                    />
+                  ))}
+                {kind === 'services' && services.map((s) => {
                   const on = serviceIds.includes(s.id)
                   const theme = CATEGORY_THEME[s.category]
                   return (
@@ -335,7 +391,14 @@ function GenerateTokenCard() {
               </div>
               {missingService && (
                 <p role="alert" className="mt-2.5 flex items-center gap-1.5 text-sm font-semibold text-red-600">
-                  <CircleAlert className="size-4" /> Pick at least one service to generate your token.
+                  <CircleAlert className="size-4" /> Pick at least one service or machine to generate your token.
+                </p>
+              )}
+              {fullMachines.length > 0 && time && (
+                <p role="alert" className="mt-2.5 flex items-center gap-1.5 text-sm font-semibold text-red-600">
+                  <CircleAlert className="size-4 shrink-0" />
+                  {fullMachines.map((s) => s.name).join(', ')} {fullMachines.length === 1 ? 'is' : 'are'} fully booked at{' '}
+                  {hourLabel(Number(time.slice(0, 2)))} — pick another time or remove it.
                 </p>
               )}
             </div>
@@ -454,26 +517,48 @@ function GenerateTokenCard() {
 
         <div className="relative lg:min-h-[400px]">
           <div className="flex flex-col rounded-3xl bg-cream-50 p-4 ring-1 ring-cream-200 sm:p-5 lg:absolute lg:inset-0">
-            <p className="text-xs font-bold uppercase tracking-[0.08em] text-wine-600 lg:order-1">Your visit</p>
-            <p className="mt-1 flex items-center gap-2 text-sm font-semibold text-wine-950 lg:order-1">
+            <p className="text-xs font-bold uppercase tracking-[0.08em] text-wine-600">Your visit</p>
+            <p className="mt-1 flex items-center gap-2 text-sm font-semibold text-wine-950">
               <CalendarDays className="size-4 text-wine-700" />{' '}
               {time ? appointmentLabel(date, time) : `${dayLabel(date)} · ${closedToday ? 'Closed today' : 'No slots left'}`}
             </p>
 
+            <TokenPreview />
+
             {selected.length > 0 && (
-              <p className="mt-4 hidden items-center justify-between border-t border-dashed border-cream-200 pt-2.5 text-xs font-bold uppercase tracking-[0.08em] text-wine-600 lg:order-5 lg:flex">
-                Selected services <span className="text-stone-400">{selected.length}</span>
+              <p className="mt-4 hidden items-center justify-between border-t border-dashed border-cream-200 pt-2.5 text-xs font-bold uppercase tracking-[0.08em] text-wine-600 lg:flex">
+                Selected <span className="text-stone-400">{selected.length}</span>
               </p>
             )}
             <div
               ref={listRef}
-              className="mt-4 max-h-72 min-h-28 flex-1 overflow-y-auto overscroll-contain rounded-2xl [scrollbar-color:var(--color-cream-200)_transparent] [scrollbar-width:thin] lg:order-6 lg:mt-2 lg:min-h-0 lg:max-h-none"
+              className="mt-4 max-h-72 min-h-28 flex-1 overflow-y-auto overscroll-contain rounded-2xl [scrollbar-color:var(--color-cream-200)_transparent] [scrollbar-width:thin] lg:mt-2 lg:min-h-0 lg:max-h-none"
             >
               {selected.length === 0 ? (
-                <div className="grid h-full min-h-28 place-items-center rounded-2xl border border-dashed border-cream-200 bg-white/60 p-4 text-center text-sm text-stone-500 lg:min-h-20">
-                  <span>
-                    No services yet — tap one or more <span className="lg:hidden">above</span>
-                    <span className="hidden lg:inline">on the left</span>.
+                <div className="relative flex h-full min-h-40 flex-col items-center justify-center overflow-hidden rounded-2xl border border-dashed border-cream-200 bg-white/70 px-5 py-6 text-center lg:min-h-20">
+                  <span className="pointer-events-none absolute -right-10 -top-10 size-32 rounded-full bg-sun-100/70" />
+                  <span className="pointer-events-none absolute -bottom-12 -left-8 size-28 rounded-full bg-wine-50" />
+                  <span className="relative grid size-14 place-items-center rounded-2xl bg-white text-wine-700 shadow-soft ring-1 ring-wine-100">
+                    <Ticket className="size-6" />
+                    <span className="absolute -right-1.5 -top-1.5 grid size-6 place-items-center rounded-full bg-sun-400 text-wine-950 ring-2 ring-white">
+                      <Sparkles className="size-3.5" />
+                    </span>
+                  </span>
+                  <p className="relative mt-3.5 text-[15px] font-bold text-wine-950">Your visit is empty</p>
+                  <p className="relative mt-1 max-w-[260px] text-[13px] leading-relaxed text-stone-500">
+                    Pick a machine or a service <span className="lg:hidden">above</span>
+                    <span className="hidden lg:inline">on the left</span> — it'll show up here with the price.
+                  </p>
+                  <span className="relative mt-4 flex flex-wrap items-center justify-center gap-1.5 text-[11px] font-semibold">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-wine-700 ring-1 ring-wine-100">
+                      <Cog className="size-3.5" /> Machines
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-wine-700 ring-1 ring-wine-100">
+                      <Scissors className="size-3.5" /> Services
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-emerald-700 ring-1 ring-emerald-100">
+                      <WhatsAppIcon className="size-3.5" /> Token on WhatsApp
+                    </span>
                   </span>
                 </div>
               ) : (
@@ -482,7 +567,14 @@ function GenerateTokenCard() {
                     <li key={s.id} className="flex items-center gap-3 rounded-2xl bg-white px-3 py-2.5 ring-1 ring-cream-200 animate-fade lg:gap-2.5 lg:rounded-xl lg:py-1.5 lg:pl-2.5 lg:pr-1.5">
                       <span className={cn('h-8 w-1 shrink-0 rounded-full lg:h-5', CATEGORY_THEME[s.category].dot)} />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-wine-950 lg:text-[13px]">{s.name}</p>
+                        <p className="flex items-center gap-1.5 text-sm font-semibold text-wine-950 lg:text-[13px]">
+                          <span className="min-w-0 truncate">{s.name}</span>
+                          {s.machine && (
+                            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-md bg-wine-50 px-1.5 py-px text-[10px] font-bold uppercase tracking-wide text-wine-700 ring-1 ring-wine-100">
+                              <Cog className="size-3" /> Machine
+                            </span>
+                          )}
+                        </p>
                         <p className="text-xs text-stone-500 lg:hidden">
                           {categoryById(s.category).name} · {minutesLabel(s.durationMin)}
                         </p>
@@ -503,7 +595,7 @@ function GenerateTokenCard() {
             </div>
 
             {selected.length > 0 && (
-              <div className="mt-4 flex items-end justify-between border-t border-dashed border-cream-200 pt-3 lg:order-2 lg:mt-3">
+              <div className="mt-4 flex items-end justify-between border-t border-dashed border-cream-200 pt-3 lg:mt-3">
                 <span className="text-sm text-stone-600">
                   {selected.length} {selected.length === 1 ? 'service' : 'services'} · {minutesLabel(totalMin)}
                 </span>
@@ -513,28 +605,147 @@ function GenerateTokenCard() {
 
             <Button
               size="lg"
-              className={cn('mt-4 w-full text-[17px] lg:order-3 lg:mt-3', selected.length === 0 && 'opacity-60')}
-              disabled={!time}
+              className={cn('mt-4 w-full text-[17px] lg:mt-3', selected.length === 0 && 'opacity-60')}
+              disabled={!time || fullMachines.length > 0}
               onClick={generate}
             >
               <Tag className="size-5" /> {time ? 'Generate Token' : closedToday ? 'Closed today' : 'No slots left today'}
             </Button>
             <p
               className={cn(
-                'mt-2.5 text-center text-xs lg:order-4',
+                'mt-2.5 text-center text-xs',
                 !time || selected.length === 0 ? 'font-semibold text-red-600' : 'text-stone-500 lg:hidden',
               )}
             >
               {!time
                 ? `Tokens are for same-day visits — come back ${reopens}`
                 : selected.length === 0
-                  ? 'Select at least one service to generate a token'
+                  ? 'Select at least one service or machine to generate a token'
                   : 'Next: confirm your WhatsApp number · takes under a minute'}
             </p>
           </div>
         </div>
       </div>
     </section>
+  )
+}
+
+function TokenPreview() {
+  const steps = [
+    { icon: Sparkles, label: 'Choose' },
+    { icon: WhatsAppIcon, label: 'Confirm' },
+    { icon: Ticket, label: 'Show token' },
+  ]
+  return (
+    <div className="mt-3 overflow-hidden rounded-2xl bg-wine-700 text-white shadow-[0_12px_28px_-18px_rgb(43_10_22/0.9)]">
+      <div className="relative flex items-center gap-3 p-3">
+        <span className="pointer-events-none absolute -right-8 -top-10 size-28 rounded-full bg-white/10" />
+        <span className="relative flex h-14 w-[78px] shrink-0 flex-col items-center justify-center rounded-xl border border-dashed border-white/30 bg-white/10">
+          <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-wine-100">Token</span>
+          <span className="text-[17px] font-extrabold leading-tight tracking-tight text-sun-300">{SALON.tokenPrefix}-•••</span>
+        </span>
+        <div className="relative min-w-0">
+          <p className="text-[14px] font-bold leading-tight">Your visit token</p>
+          <p className="mt-0.5 text-[12px] leading-snug text-wine-100">Generated instantly and sent to your WhatsApp — show it at reception, no queue.</p>
+        </div>
+      </div>
+      <ol className="grid grid-cols-3 border-t border-white/10 bg-wine-800/60 text-[11px] font-semibold text-wine-100">
+        {steps.map(({ icon: Icon, label }, i) => (
+          <li key={label} className={cn('flex items-center justify-center gap-1.5 px-1 py-2', i > 0 && 'border-l border-white/10')}>
+            <span className="grid size-4 shrink-0 place-items-center rounded-full bg-sun-400 text-[10px] font-extrabold text-wine-950">{i + 1}</span>
+            <Icon className="hidden size-3.5 shrink-0 text-sun-300 sm:block" />
+            <span className="truncate">{label}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  )
+}
+
+function MachineTile({
+  machine: m,
+  on,
+  free,
+  total,
+  at,
+  onToggle,
+}: {
+  machine: Service
+  on: boolean
+  free: number
+  total: number
+  at?: string
+  onToggle: () => void
+}) {
+  const theme = CATEGORY_THEME[m.category]
+  const full = !!at && free === 0
+  const low = !full && free <= Math.max(1, Math.round(total / 4))
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      disabled={full && !on}
+      aria-pressed={on}
+      aria-label={`${m.name}, ${money(servicePrice(m))}, ${full ? `fully booked at ${at}` : `${free} of ${total} open`}`}
+      className={cn(
+        'group flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-white text-left transition disabled:cursor-not-allowed',
+        on
+          ? full
+            ? 'border-red-300 ring-2 ring-red-100'
+            : cn(theme.border, theme.ring, 'ring-2 shadow-[0_10px_24px_-16px_rgb(43_10_22/0.6)]')
+          : 'border-wine-100 hover:-translate-y-0.5 hover:border-wine-200 hover:shadow-soft',
+      )}
+    >
+      <span className="relative block aspect-[2/1] overflow-hidden bg-wine-50 sm:aspect-[5/2]">
+        <img
+          src={m.machine!.photo}
+          alt=""
+          loading="lazy"
+          className={cn('size-full object-cover transition duration-500 group-hover:scale-105', full && !on && 'grayscale')}
+        />
+        <span className="absolute inset-0 bg-gradient-to-t from-wine-950/55 via-transparent to-transparent" />
+        <span
+          className={cn(
+            'absolute left-2 top-2 grid size-6 place-items-center rounded-full ring-2 transition',
+            on ? cn(theme.solid, 'ring-white') : 'bg-wine-950/25 text-transparent ring-white backdrop-blur',
+          )}
+        >
+          <Check className="size-3.5" strokeWidth={3.5} />
+        </span>
+        <span className="absolute right-2 top-2 rounded-full bg-white/95 px-2 py-0.5 text-[12px] font-extrabold text-wine-950 shadow-sm">
+          {money(servicePrice(m))}
+        </span>
+        {!full && (
+          <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-wine-950/55 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur">
+            <Clock className="size-3" /> {minutesLabel(m.durationMin)}
+          </span>
+        )}
+        {full && (
+          <span className="absolute inset-x-2 bottom-2 rounded-lg bg-red-600/90 px-2 py-1 text-center text-[11px] font-bold text-white">
+            Fully booked at {at}
+          </span>
+        )}
+      </span>
+      <span className="flex flex-1 flex-col px-2.5 pb-2.5 pt-2">
+        <span className="line-clamp-2 text-[13px] font-bold leading-tight text-wine-950 sm:line-clamp-1">{m.name}</span>
+        <span className="mt-auto pt-1.5">
+          <span className="flex items-center justify-between gap-2 text-[11px] font-semibold">
+            <span className={cn(full ? 'text-red-600' : low ? 'text-amber-700' : 'text-emerald-700')}>
+              {!at ? 'Pick a time' : full ? 'Booked' : low ? `Only ${free} left` : `Available · ${at}`}
+            </span>
+            <span className="text-stone-400">
+              {free}/{total}
+            </span>
+          </span>
+          <span className="mt-1 block h-1 overflow-hidden rounded-full bg-stone-100">
+            <span
+              className={cn('block h-full rounded-full transition-all', full ? 'bg-red-400' : low ? 'bg-amber-400' : 'bg-emerald-500')}
+              style={{ width: `${total ? (free / total) * 100 : 0}%` }}
+            />
+          </span>
+        </span>
+      </span>
+    </button>
   )
 }
 
@@ -581,6 +792,105 @@ function HowItWorks() {
           </li>
         ))}
       </ol>
+    </section>
+  )
+}
+
+function OurMachines() {
+  const [cat, setCat] = useState<CategoryId | 'all'>('all')
+  const [showAll, setShowAll] = useState(false)
+  const list =
+    cat !== 'all'
+      ? MACHINES.filter((m) => m.category === cat)
+      : showAll
+        ? MACHINES
+        : CATEGORIES.flatMap((c) => MACHINES.filter((m) => m.category === c.id).slice(0, 2))
+  const chips = [{ id: 'all' as const, name: 'All', count: MACHINES.length }, ...CATEGORIES.map((c) => ({ id: c.id, name: c.name, count: MACHINES.filter((m) => m.category === c.id).length }))]
+
+  return (
+    <section>
+      <SectionHead
+        eyebrow="Our machines"
+        title="Professional salon machines"
+        text="Reserve a machine for your own session — pick a time today and it's held just for you."
+        link={{ to: '/book?service=mc-nails-pedi-spa', label: 'Reserve a machine' }}
+      />
+      <div role="tablist" aria-label="Machine category" className="-mx-3 mb-4 flex gap-2 overflow-x-auto px-3 pb-1 scrollbar-none sm:mx-0 sm:px-0">
+        {chips.map((c) => {
+          const on = cat === c.id
+          const Icon = c.id === 'all' ? Cog : CATEGORY_ICON[c.id]
+          return (
+            <button
+              key={c.id}
+              type="button"
+              role="tab"
+              aria-selected={on}
+              onClick={() => setCat(c.id)}
+              className={cn(
+                'inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm font-semibold transition',
+                on
+                  ? c.id === 'all'
+                    ? 'border-wine-700 bg-wine-700 text-white'
+                    : cn(CATEGORY_THEME[c.id].solid, CATEGORY_THEME[c.id].border)
+                  : 'border-wine-100 bg-white text-wine-950 hover:border-wine-300',
+              )}
+            >
+              <Icon className={cn('size-4', !on && (c.id === 'all' ? 'text-wine-700' : CATEGORY_THEME[c.id].text))} />
+              {c.name}
+              <span className={cn('rounded-full px-1.5 text-[11px] font-bold', on ? 'bg-white/20' : 'bg-wine-50 text-wine-700')}>{c.count}</span>
+            </button>
+          )
+        })}
+      </div>
+      <div className="-mx-3 flex snap-x gap-3 overflow-x-auto px-3 pb-2 scrollbar-none sm:-mx-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0">
+        {list.map((m) => {
+          const Icon = CATEGORY_ICON[m.category]
+          return (
+            <Link
+              key={m.id}
+              to={`/book?service=${m.id}`}
+              className="group flex w-[240px] shrink-0 snap-start flex-col overflow-hidden rounded-3xl border border-wine-100 bg-white shadow-soft transition hover:-translate-y-0.5 hover:border-wine-200 lg:w-auto"
+            >
+              <div className="relative aspect-[4/3] overflow-hidden bg-wine-50">
+                <img
+                  src={m.machine!.photo}
+                  alt={m.name}
+                  loading="lazy"
+                  className="size-full object-cover transition duration-500 group-hover:scale-105"
+                />
+                <span
+                  className={cn(
+                    'absolute left-3 top-3 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold shadow-sm',
+                    CATEGORY_THEME[m.category].solid,
+                  )}
+                >
+                  <Icon className="size-3.5" /> {categoryById(m.category).name}
+                </span>
+                <span className="absolute right-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[12px] font-bold text-wine-950 shadow-sm">
+                  {money(servicePrice(m))}
+                </span>
+              </div>
+              <div className="flex flex-1 flex-col p-4">
+                <p className="font-bold leading-snug text-wine-950">{m.name}</p>
+                <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-stone-500">{m.description}</p>
+                <p className="mt-auto flex items-center gap-1.5 pt-3 text-xs font-semibold text-stone-500">
+                  <Clock className="size-3.5 shrink-0" /> {minutesLabel(m.durationMin)} session · {m.machine!.units} per branch
+                </p>
+                <span className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-wine-700 transition-all group-hover:gap-2">
+                  Reserve <ArrowRight className="size-4" />
+                </span>
+              </div>
+            </Link>
+          )
+        })}
+      </div>
+      {cat === 'all' && (
+        <div className="mt-4 flex justify-center">
+          <Button variant="outline" onClick={() => setShowAll((v) => !v)}>
+            {showAll ? 'Show fewer machines' : `Show all ${MACHINES.length} machines`}
+          </Button>
+        </div>
+      )}
     </section>
   )
 }
@@ -798,9 +1108,9 @@ function UpcomingCard() {
     >
       {next ? (
         <button onClick={() => show(next.id)} className="flex w-full items-center gap-4 rounded-2xl bg-wine-50/60 p-3 text-left ring-1 ring-wine-100">
-          <span className={cn('rounded-xl px-3 py-2 text-center', CATEGORY_THEME[categoryOfBooking(next)].soft)}>
-            <span className="block text-[11px] opacity-75">Token</span>
-            <span className="block text-lg font-extrabold">{next.token}</span>
+          <span className={cn('shrink-0 rounded-xl px-3 py-2 text-center', CATEGORY_THEME[categoryOfBooking(next)].soft)}>
+            <span className="block text-[10px] font-bold uppercase tracking-[0.12em] opacity-70">Token</span>
+            <span className="block whitespace-nowrap text-lg font-extrabold leading-tight">{next.token}</span>
           </span>
           <span className="min-w-0 space-y-1 border-l border-wine-100 pl-4 text-xs text-wine-950">
             <span className="flex items-center gap-2 truncate">

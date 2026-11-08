@@ -13,7 +13,7 @@ export interface BookingNotice {
   total?: string
   /** First message: visit token text, used as the image caption (max 1024 chars). */
   caption: string
-  /** Second message: itemised payment receipt (max 4096 chars). Older clients don't send it. */
+  /** Second message: receipt text, used as the receipt image caption when one is sent. Older clients don't send it. */
   receipt?: string
 }
 
@@ -27,8 +27,8 @@ interface Config {
    */
   template?: string
   /**
-   * Approved template for the receipt message. Expected body params:
-   * {{1}} name, {{2}} token, {{3}} total, {{4}} payment.
+   * Approved template for the receipt message. Expected shape:
+   * IMAGE header, body params {{1}} name, {{2}} token, {{3}} total, {{4}} payment.
    * Without it the receipt goes out as free-form text (same 24h window rule).
    */
   receiptTemplate?: string
@@ -52,7 +52,7 @@ async function uploadImage(cfg: Config, png: File) {
   const form = new FormData()
   form.append('messaging_product', 'whatsapp')
   form.append('type', 'image/png')
-  form.append('file', png, png.name || 'token.png')
+  form.append('file', png, png.name || 'image.png')
   const data = await graph(cfg, 'media', form, false)
   if (!data.id) throw new Error('Media upload returned no id')
   return data.id
@@ -77,10 +77,13 @@ async function send(cfg: Config, to: string, message: object) {
   return data.messages?.[0]?.id ?? ''
 }
 
-/** Sends the token (image + caption) and then the payment receipt, in that order. */
-export async function sendBookingMessages(cfg: Config, n: BookingNotice, png: File | null): Promise<Result> {
+/** Sends the token (image + caption) and then the receipt (image + caption), in that order. */
+export async function sendBookingMessages(cfg: Config, n: BookingNotice, png: File | null, receiptPng: File | null): Promise<Result> {
   try {
-    const mediaId = png ? await uploadImage(cfg, png) : null
+    const [mediaId, receiptMediaId] = await Promise.all([
+      png ? uploadImage(cfg, png) : null,
+      receiptPng && n.receipt ? uploadImage(cfg, receiptPng) : null,
+    ])
 
     const token = cfg.template
       ? templateMessage(cfg, cfg.template, [n.name, n.token, n.services, n.when, n.payment], mediaId)
@@ -91,11 +94,38 @@ export async function sendBookingMessages(cfg: Config, n: BookingNotice, png: Fi
     const ids = [await send(cfg, n.to, token)]
     if (n.receipt) {
       const receipt = cfg.receiptTemplate
-        ? templateMessage(cfg, cfg.receiptTemplate, [n.name, n.token, n.total ?? '', n.payment])
-        : { type: 'text', text: { body: n.receipt } }
+        ? templateMessage(cfg, cfg.receiptTemplate, [n.name, n.token, n.total ?? '', n.payment], receiptMediaId)
+        : receiptMediaId
+          ? { type: 'image', image: { id: receiptMediaId, caption: n.receipt.slice(0, 1024) } }
+          : { type: 'text', text: { body: n.receipt } }
       ids.push(await send(cfg, n.to, receipt))
     }
     return { ok: true, ids }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'WhatsApp send failed' }
+  }
+}
+
+export interface ReceiptNotice {
+  to: string
+  name: string
+  /** Token or package name; fills {{2}} of the receipt template. */
+  reference: string
+  total: string
+  /** Receipt text, used as the image caption (max 1024 chars). */
+  caption: string
+}
+
+/** Sends one receipt (image + caption, or text when no image). */
+export async function sendReceiptMessage(cfg: Omit<Config, 'template'>, n: ReceiptNotice, png: File | null): Promise<Result> {
+  try {
+    const mediaId = png ? await uploadImage(cfg, png) : null
+    const message = cfg.receiptTemplate
+      ? templateMessage(cfg, cfg.receiptTemplate, [n.name, n.reference, n.total, 'Paid online'], mediaId)
+      : mediaId
+        ? { type: 'image', image: { id: mediaId, caption: n.caption } }
+        : { type: 'text', text: { body: n.caption } }
+    return { ok: true, ids: [await send(cfg, n.to, message)] }
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : 'WhatsApp send failed' }
   }

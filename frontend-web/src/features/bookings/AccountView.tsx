@@ -22,6 +22,7 @@ import { useDb } from '@/data/db'
 import type { Booking, Customer } from '@/data/types'
 import { CATEGORY_ICON } from '@/features/booking/parts'
 import { remaining } from '@/features/booking/pricing'
+import { PlanKind, PlanThumb, machinesFirst } from '@/features/memberships/PlanPhoto'
 import { useTokenModal } from '@/features/token/TokenModal'
 import { CATEGORY_THEME, categoryOfBooking } from '@/lib/categoryTheme'
 import { appointmentLabel, cn, formatPhone, initials, isoDate, money, monthShort, shortDate, timeLabel } from '@/lib/format'
@@ -198,9 +199,18 @@ function UpcomingList({ items }: { items: Booking[] }) {
             onClick={() => show(b.id)}
             className="flex min-w-0 items-start gap-3.5 rounded-3xl border border-wine-100 bg-white p-4 text-left shadow-soft transition hover:-translate-y-0.5 hover:border-wine-200 sm:items-center sm:gap-4"
           >
-            <span className={cn('grid w-[72px] shrink-0 place-items-center rounded-2xl py-3 ring-1 sm:w-20', theme.soft, theme.ring)}>
-              <span className="text-[10px] font-semibold uppercase tracking-wide opacity-70">Token</span>
-              <span className="text-lg font-extrabold sm:text-xl">{b.token}</span>
+            <span
+              className={cn(
+                'flex w-[92px] shrink-0 flex-col items-center justify-center self-stretch rounded-2xl px-2 py-3 ring-1 sm:w-[100px]',
+                theme.soft,
+                theme.ring,
+              )}
+            >
+              <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.12em] opacity-70">
+                <Ticket className="size-3" /> Token
+              </span>
+              <span className="mt-1.5 whitespace-nowrap text-[20px] font-extrabold leading-none tracking-tight sm:text-[22px]">{b.token}</span>
+              <span className={cn('mt-2 h-1 w-8 rounded-full', theme.dot)} />
             </span>
             <span className="min-w-0 flex-1">
               <span className="flex items-start justify-between gap-2">
@@ -398,20 +408,23 @@ function PackageList({ customer }: { customer: Customer }) {
   }
   return (
     <div className="grid gap-3 md:grid-cols-2">
-      {customer.packages.map((p) => {
+      {machinesFirst(customer.packages).map((p) => {
         const plan = planById(p.planId)
         const service = plan && serviceById(plan.serviceId)
         const left = remaining(p)
         const status = p.expiresOn < today ? 'Expired' : left === 0 ? 'Used up' : 'Active'
         return (
           <div key={p.id} className="rounded-3xl border border-wine-100 bg-white p-5 shadow-soft">
-            <div className="flex items-start gap-3">
-              <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-wine-700 text-sun-300">
-                <Crown className="size-5" />
-              </span>
+            <div className="flex items-start gap-3.5">
+              {plan && <PlanThumb plan={plan} className="size-14" />}
               <div className="min-w-0 flex-1">
                 <p className="font-bold text-wine-950">{plan?.name}</p>
                 <p className="text-sm text-stone-500">{service?.name}</p>
+                {plan && (
+                  <span className="mt-1 inline-block">
+                    <PlanKind plan={plan} />
+                  </span>
+                )}
               </div>
               <Badge tone={status === 'Active' ? 'sun' : 'muted'}>{status}</Badge>
             </div>

@@ -5,8 +5,10 @@
  */
 import { SALON } from '@/lib/config'
 import { isClosedDay, isoDate } from '@/lib/format'
+import { planById, serviceById } from './catalog'
 import { useDb } from './db'
-import type { Booking, Customer, PaymentMethod } from './types'
+import { machineFree } from './machines'
+import type { Booking, Customer, CustomerPackage, PaymentMethod } from './types'
 import type { BookingDraft } from '@/features/booking/draft'
 import { paymentError, paymentSplit, summarize } from '@/features/booking/pricing'
 
@@ -46,6 +48,33 @@ export async function registerCustomer(input: {
   return customer
 }
 
+/** Adds a paid package to the customer, valid from today for the plan's validity period. */
+export async function subscribePackage(
+  customerId: string,
+  planId: string,
+  payment: { method: PaymentMethod; ref: string },
+): Promise<CustomerPackage> {
+  await wait(400)
+  const db = useDb.getState()
+  const customer = db.customers.find((c) => c.id === customerId)
+  const plan = planById(planId)
+  if (!customer) throw new Error('Customer not found')
+  if (!plan) throw new Error('Package not found')
+  if (!payment.ref) throw new Error('Payment was not completed')
+  const expires = new Date()
+  expires.setDate(expires.getDate() + plan.validityDays)
+  const pkg: CustomerPackage = {
+    id: uid('cp'),
+    planId,
+    used: 0,
+    total: plan.sessions,
+    expiresOn: isoDate(expires),
+    purchase: { price: plan.price, method: payment.method, ref: payment.ref, at: new Date().toISOString() },
+  }
+  db.upsertCustomer({ ...customer, packages: [...customer.packages, pkg] })
+  return pkg
+}
+
 export interface PaymentInput {
   method: PaymentMethod
   amount: number
@@ -70,6 +99,8 @@ export async function createBooking(
   if (!draft.date || !draft.time || draft.serviceIds.length === 0) throw new Error('Booking is incomplete')
   if (draft.date !== isoDate(new Date())) throw new Error('Tokens can only be generated for today.')
   if (isClosedDay(draft.date)) throw new Error(`The salon is closed today (closed on ${SALON.closedDaysLabel}). Please come back tomorrow.`)
+  const full = draft.serviceIds.find((id) => serviceById(id)?.machine && machineFree(db.bookings, id, draft.date!, draft.time!, draft.branchId) === 0)
+  if (full) throw new Error(`${serviceById(full)?.name} is fully booked at this time. Please pick another time.`)
 
   const summary = summarize(draft, customer)
   const payError = paymentError(summary.total, draft)
@@ -120,6 +151,5 @@ export async function createBooking(
     packages: customer.packages.map((p) => (covered.has(p.id) ? { ...p, used: p.used + 1 } : p)),
   })
   db.addBooking(booking)
-  db.setCurrentCustomer(customerId)
   return booking
 }

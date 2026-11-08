@@ -4,6 +4,8 @@ export interface CustomerPackage {
   used: number
   total: number
   expiresOn: string
+  /** Set when bought online; seeded and reception sales have none. */
+  purchase?: { price: number; method: PaymentMethod; ref: string; at: string }
 }
 
 export interface Visit {

@@ -27,6 +27,7 @@ export const DEMO_CUSTOMERS: Customer[] = [
     packages: [
       { id: 'cp-sara-glow', planId: 'pk-glow', used: 2, total: 3, expiresOn: daysFromNow(40) },
       { id: 'cp-sara-blow', planId: 'pk-blowdry', used: 3, total: 6, expiresOn: daysFromNow(55) },
+      { id: 'cp-sara-pedi', planId: 'pk-pedi-spa', used: 1, total: 5, expiresOn: daysFromNow(60) },
     ],
     history: [
       { date: daysFromNow(-18), services: ['Root colour', 'Blow-dry'], amount: 330 },
@@ -43,7 +44,10 @@ export const DEMO_CUSTOMERS: Customer[] = [
     memberSince: '2025-08-02',
     points: 60,
     due: null,
-    packages: [{ id: 'cp-noor-nails', planId: 'pk-nails', used: 2, total: 4, expiresOn: daysFromNow(30) }],
+    packages: [
+      { id: 'cp-noor-nails', planId: 'pk-nails', used: 2, total: 4, expiresOn: daysFromNow(30) },
+      { id: 'cp-noor-micro', planId: 'pk-microderm', used: 1, total: 4, expiresOn: daysFromNow(80) },
+    ],
     history: [{ date: daysFromNow(-12), services: ['Classic manicure'], amount: 0 }],
   },
   {
@@ -55,7 +59,7 @@ export const DEMO_CUSTOMERS: Customer[] = [
     memberSince: '2025-11-20',
     points: 35,
     due: { amount: 45, note: 'Product balance (Heat protect mist)', date: daysFromNow(-9) },
-    packages: [],
+    packages: [{ id: 'cp-priya-steam', planId: 'pk-hair-steam', used: 2, total: 5, expiresOn: daysFromNow(45) }],
     history: [{ date: daysFromNow(-9), services: ['Haircut & Blow-dry'], amount: 120 }],
   },
 ]
@@ -97,7 +101,7 @@ export const useDb = create<DbState>()(
     }),
     {
       name: 'beaudesk-db',
-      version: 3,
+      version: 5,
       migrate: (persisted, version) => {
         const state = persisted as DbState
         if (version < 2) {
@@ -117,6 +121,13 @@ export const useDb = create<DbState>()(
           )
           state.bookings = state.bookings.map((b) => ({ ...b, token: renumbered.get(b.id) ?? b.token }))
           state.tokenCounters = { [SALON.tokenPrefix]: n }
+        }
+        if (version < 5 && state.customers) {
+          state.customers = state.customers.map((c) => {
+            const seeded = DEMO_CUSTOMERS.find((d) => d.id === c.id)
+            const added = seeded?.packages.filter((p) => !c.packages.some((x) => x.id === p.id)) ?? []
+            return added.length ? { ...c, packages: [...c.packages, ...added] } : c
+          })
         }
         return state
       },

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BadgeCheck, CalendarCheck, CircleAlert, Crown, History, Pencil, Star, Wallet } from 'lucide-react'
+import { BadgeCheck, CalendarCheck, CircleAlert, History, Pencil, Star, Wallet } from 'lucide-react'
 import { Badge, Button, Card, Field, inputClass, Progress, WhatsAppIcon } from '@/components/ui'
 import { registerCustomer } from '@/data/api'
 import { planById, serviceById, servicePrice } from '@/data/catalog'
@@ -8,6 +8,7 @@ import { cn, formatPhone, initials, money, shortDate } from '@/lib/format'
 import { useDraft } from '../draft'
 import { activePackages, remaining } from '../pricing'
 import { StepFooter, StepHeading, useDraftCustomer } from '../parts'
+import { PlanKind, PlanThumb, machinesFirst } from '@/features/memberships/PlanPhoto'
 
 export function CustomerStep() {
   const isNew = useDraft((s) => s.isNew)
@@ -18,7 +19,7 @@ export function CustomerStep() {
 
 function ExistingCustomer({ customer }: { customer: Customer }) {
   const d = useDraft()
-  const packages = activePackages(customer)
+  const packages = machinesFirst(activePackages(customer))
   const visits = customer.history.length
 
   return (
@@ -139,17 +140,18 @@ function PackageCard({ pkg }: { pkg: CustomerPackage }) {
   return (
     <Card className={cn('p-5 transition', choice === 'use' && 'border-wine-600 ring-4 ring-wine-50')}>
       <div className="flex items-start gap-4">
-        <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-sun-100 text-wine-700">
-          <Crown className="size-5" />
-        </span>
+        <PlanThumb plan={plan} className="size-16 sm:size-[72px]" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <p className="font-bold text-wine-950">{plan.name}</p>
             <Badge tone="sun">Active</Badge>
           </div>
-          <p className="text-sm text-stone-500">
+          <p className="mt-0.5 text-sm text-stone-500">
             {service.name} · valid till {shortDate(pkg.expiresOn)}
           </p>
+          <span className="mt-1.5 inline-block">
+            <PlanKind plan={plan} />
+          </span>
         </div>
         <span className="text-right">
           <span className="block text-2xl font-extrabold leading-none text-wine-950">

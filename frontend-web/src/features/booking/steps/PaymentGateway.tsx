@@ -46,7 +46,7 @@ function brandOf(digits: string): Brand {
   return null
 }
 
-const PROCESSING_STEPS = ['Contacting your bank', 'Authorising payment', 'Confirming booking']
+const PROCESSING_STEPS = ['Contacting your bank', 'Authorising payment']
 
 export interface CheckoutLine {
   label: string
@@ -58,6 +58,8 @@ export function PaymentGateway({
   method,
   amount,
   lines = [],
+  confirmStep = 'Confirming booking',
+  successNote = 'generating your token…',
   onClose,
   onPaid,
 }: {
@@ -66,9 +68,12 @@ export function PaymentGateway({
   amount: number
   /** Order details shown above the amount (services, appointment, what's left to pay). */
   lines?: CheckoutLine[]
+  confirmStep?: string
+  successNote?: string
   onClose: () => void
   onPaid: (ref: string) => Promise<void>
 }) {
+  const steps = [...PROCESSING_STEPS, confirmStep]
   const [phase, setPhase] = useState<Phase>('form')
   const [card, setCard] = useState({ number: '', name: '', exp: '', cvc: '' })
   const [touched, setTouched] = useState(false)
@@ -87,7 +92,7 @@ export function PaymentGateway({
 
   useEffect(() => {
     if (phase !== 'processing') return
-    const id = window.setInterval(() => setStepIndex((i) => Math.min(i + 1, PROCESSING_STEPS.length - 1)), 450)
+    const id = window.setInterval(() => setStepIndex((i) => Math.min(i + 1, steps.length - 1)), 450)
     return () => window.clearInterval(id)
   }, [phase])
 
@@ -163,7 +168,7 @@ export function PaymentGateway({
             <p className="mt-5 text-center font-bold text-wine-950">Processing {money(amount)}</p>
             <p className="text-center text-sm text-stone-500">Please keep this window open.</p>
             <ol className="mx-auto mt-6 max-w-[260px] space-y-2.5">
-              {PROCESSING_STEPS.map((s, i) => (
+              {steps.map((s, i) => (
                 <li key={s} className={cn('flex items-center gap-2.5 text-sm transition', i <= stepIndex ? 'text-wine-950' : 'text-stone-300')}>
                   <span
                     className={cn(
@@ -186,7 +191,7 @@ export function PaymentGateway({
               <Check className="size-9" strokeWidth={3} />
             </span>
             <p className="mt-6 text-lg font-extrabold text-wine-950">Payment successful</p>
-            <p className="mt-0.5 text-sm text-stone-500">{money(amount)} paid · generating your token…</p>
+            <p className="mt-0.5 text-sm text-stone-500">{money(amount)} paid · {successNote}</p>
             {ref && <p className="mx-auto mt-4 w-fit rounded-lg bg-white px-3 py-1.5 font-mono text-xs text-stone-500 ring-1 ring-wine-100">Ref {ref}</p>}
           </div>
         )}

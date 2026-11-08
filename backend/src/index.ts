@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
-import { sendBookingMessages, type BookingNotice } from './whatsapp'
+import { sendBookingMessages, sendReceiptMessage, type BookingNotice, type ReceiptNotice } from './whatsapp'
 
 type Bindings = Env & {
   SUPABASE_SECRET_KEY?: string
@@ -40,8 +40,9 @@ app.post('/notify/booking', async (c) => {
   if (notice.receipt !== undefined && (typeof notice.receipt !== 'string' || notice.receipt.length > 4096))
     return c.json({ error: 'Invalid receipt' }, 400)
 
-  const image = form.get('image')
-  const png = image instanceof File && image.type === 'image/png' && image.size < 2_000_000 ? image : null
+  const asPng = (v: unknown) => (v instanceof File && v.type === 'image/png' && v.size < 2_000_000 ? v : null)
+  const png = asPng(form.get('image'))
+  const receiptPng = asPng(form.get('receiptImage'))
 
   const { WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID } = c.env
   if (!WHATSAPP_TOKEN || !WHATSAPP_PHONE_NUMBER_ID) return c.json({ status: 'demo' })
@@ -51,6 +52,42 @@ app.post('/notify/booking', async (c) => {
       token: WHATSAPP_TOKEN,
       phoneNumberId: WHATSAPP_PHONE_NUMBER_ID,
       template: c.env.WHATSAPP_TEMPLATE,
+      receiptTemplate: c.env.WHATSAPP_RECEIPT_TEMPLATE,
+      templateLang: c.env.WHATSAPP_TEMPLATE_LANG ?? 'en',
+    },
+    notice,
+    png,
+    receiptPng,
+  )
+  return result.ok ? c.json({ status: 'sent', ids: result.ids }) : c.json({ status: 'failed', error: result.error }, 502)
+})
+
+/** Sends a single receipt (image + caption), e.g. after a package purchase. */
+app.post('/notify/receipt', async (c) => {
+  const form = await c.req.formData().catch(() => null)
+  if (!form) return c.json({ error: 'Expected multipart form data' }, 400)
+
+  let notice: ReceiptNotice
+  try {
+    notice = JSON.parse(String(form.get('payload') ?? ''))
+  } catch {
+    return c.json({ error: 'Invalid payload' }, 400)
+  }
+  if (!/^\d{8,15}$/.test(notice.to ?? '')) return c.json({ error: 'Invalid WhatsApp number' }, 400)
+  if (typeof notice.caption !== 'string' || !notice.caption || notice.caption.length > 1024) return c.json({ error: 'Invalid receipt' }, 400)
+  for (const k of ['name', 'reference', 'total'] as const) {
+    if (typeof notice[k] !== 'string' || notice[k].length > 200) return c.json({ error: `Invalid ${k}` }, 400)
+  }
+  const image = form.get('image')
+  const png = image instanceof File && image.type === 'image/png' && image.size < 2_000_000 ? image : null
+
+  const { WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID } = c.env
+  if (!WHATSAPP_TOKEN || !WHATSAPP_PHONE_NUMBER_ID) return c.json({ status: 'demo' })
+
+  const result = await sendReceiptMessage(
+    {
+      token: WHATSAPP_TOKEN,
+      phoneNumberId: WHATSAPP_PHONE_NUMBER_ID,
       receiptTemplate: c.env.WHATSAPP_RECEIPT_TEMPLATE,
       templateLang: c.env.WHATSAPP_TEMPLATE_LANG ?? 'en',
     },

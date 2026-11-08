@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { create } from 'zustand'
-import { ArrowRight, Check, Download, LoaderCircle } from 'lucide-react'
+import { ArrowRight, Check, Download, LoaderCircle, UserPlus } from 'lucide-react'
 import { Button, CloseButton, Modal, WhatsAppIcon } from '@/components/ui'
 import { useDb } from '@/data/db'
 import type { Booking } from '@/data/types'
 import { cn, formatPhone, initials, money } from '@/lib/format'
+import { ReceiptCard } from './ReceiptCard'
 import { TokenCard } from './TokenCard'
-import { downloadToken, renderTokenPng, shareTokenOnWhatsApp } from './share'
+import { downloadToken, renderPng, shareTokenOnWhatsApp } from './share'
 import { sendBookingToWhatsApp } from './whatsapp'
 
 interface TokenModalState {
@@ -53,7 +54,9 @@ const METHOD_LABEL: Record<Booking['paymentMethod'], string> = {
 function TokenWindow({ booking, justBooked, onClose }: { booking: Booking; justBooked: boolean; onClose: () => void }) {
   const navigate = useNavigate()
   const exportRef = useRef<HTMLDivElement>(null)
+  const receiptRef = useRef<HTMLDivElement>(null)
   const [png, setPng] = useState<Blob | null>(null)
+  const [receiptPng, setReceiptPng] = useState<Blob | null>(null)
   const [preparing, setPreparing] = useState(true)
   const autoSent = useRef(false)
 
@@ -61,10 +64,14 @@ function TokenWindow({ booking, justBooked, onClose }: { booking: Booking; justB
     let alive = true
     setPreparing(true)
     const id = window.setTimeout(() => {
-      if (!exportRef.current) return
-      renderTokenPng(exportRef.current)
-        .then((b) => alive && setPng(b))
-        .catch(() => alive && setPng(null))
+      if (!exportRef.current || !receiptRef.current) return
+      const render = (node: HTMLElement) => renderPng(node).catch(() => null)
+      Promise.all([render(exportRef.current), render(receiptRef.current)])
+        .then(([token, receipt]) => {
+          if (!alive) return
+          setPng(token)
+          setReceiptPng(receipt)
+        })
         .finally(() => alive && setPreparing(false))
     }, 350)
     return () => {
@@ -76,16 +83,20 @@ function TokenWindow({ booking, justBooked, onClose }: { booking: Booking; justB
   useEffect(() => {
     if (!justBooked || booking.whatsapp || preparing || autoSent.current) return
     autoSent.current = true
-    void sendBookingToWhatsApp(booking, png)
-  }, [justBooked, booking, preparing, png])
+    void sendBookingToWhatsApp(booking, png, receiptPng)
+  }, [justBooked, booking, preparing, png, receiptPng])
 
   const shareManually = useCallback(() => {
-    void shareTokenOnWhatsApp(booking, png)
-  }, [booking, png])
+    void shareTokenOnWhatsApp(booking, png, receiptPng)
+  }, [booking, png, receiptPng])
 
   const go = (to: string) => {
     onClose()
     navigate(to)
+  }
+  const nextCustomer = () => {
+    onClose()
+    navigate('/book')
   }
 
   const sending = justBooked && !booking.whatsapp
@@ -153,14 +164,25 @@ function TokenWindow({ booking, justBooked, onClose }: { booking: Booking; justB
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3 lg:mt-auto">
-            <Button variant="outline" size="lg" className="whitespace-nowrap px-3!" onClick={() => go('/')}>
-              Keep browsing
-            </Button>
-            <Button size="lg" className="whitespace-nowrap px-3!" onClick={() => go('/bookings')}>
-              My bookings <ArrowRight className="size-4" />
-            </Button>
-          </div>
+          {justBooked ? (
+            <div className="grid grid-cols-2 gap-3 lg:mt-auto">
+              <Button variant="outline" size="lg" className="whitespace-nowrap px-3!" onClick={onClose}>
+                Done
+              </Button>
+              <Button size="lg" className="whitespace-nowrap px-3!" onClick={nextCustomer}>
+                <UserPlus className="size-4" /> Book next customer
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 lg:mt-auto">
+              <Button variant="outline" size="lg" className="whitespace-nowrap px-3!" onClick={() => go('/')}>
+                Keep browsing
+              </Button>
+              <Button size="lg" className="whitespace-nowrap px-3!" onClick={() => go('/bookings')}>
+                My bookings <ArrowRight className="size-4" />
+              </Button>
+            </div>
+          )}
 
           <p className="text-[12px] text-stone-400">
             {booking.total === 0
@@ -175,6 +197,9 @@ function TokenWindow({ booking, justBooked, onClose }: { booking: Booking; justB
       <div aria-hidden className="pointer-events-none fixed left-[-10000px] top-0">
         <div ref={exportRef} className="w-[680px] bg-white p-5">
           <TokenCard booking={booking} />
+        </div>
+        <div ref={receiptRef} className="w-[520px] bg-white p-5">
+          <ReceiptCard booking={booking} />
         </div>
       </div>
     </div>

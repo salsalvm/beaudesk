@@ -16,6 +16,7 @@ import {
 import { Card } from '@/components/ui'
 import { createBooking } from '@/data/api'
 import { ANY_STYLIST, branchById, stylistById } from '@/data/catalog'
+import { useDb } from '@/data/db'
 import type { PaymentMethod } from '@/data/types'
 import { SALON } from '@/lib/config'
 import { appointmentLabel, cn, formatPhone, money } from '@/lib/format'
@@ -51,7 +52,8 @@ export function PaymentStep() {
     if (!customer) return
     const booking = await createBooking(d, customer.id, { method: m, ref })
     d.reset()
-    navigate('/bookings', { replace: true })
+    useDb.getState().setCurrentCustomer(null)
+    navigate('/', { replace: true })
     showToken(booking.id, true)
   }
 

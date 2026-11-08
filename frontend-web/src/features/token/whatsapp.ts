@@ -1,11 +1,11 @@
 import { useDb } from '@/data/db'
 import type { Booking } from '@/data/types'
 import { money } from '@/lib/format'
-import { paymentSummary, receiptMessage, tokenFileName, tokenMessage } from './share'
+import { paymentSummary, receiptFileName, receiptMessage, tokenFileName, tokenMessage } from './share'
 import { tokenFacts } from './TokenCard'
 
-/** Sends two WhatsApp messages (token image, then payment receipt) and records the result on the booking. */
-export async function sendBookingToWhatsApp(b: Booking, png: Blob | null) {
+/** Sends two WhatsApp messages (token image, then receipt image) and records the result on the booking. */
+export async function sendBookingToWhatsApp(b: Booking, png: Blob | null, receiptPng: Blob | null) {
   const f = tokenFacts(b)
   const form = new FormData()
   form.append(
@@ -19,10 +19,11 @@ export async function sendBookingToWhatsApp(b: Booking, png: Blob | null) {
       payment: paymentSummary(b),
       total: money(b.total),
       caption: tokenMessage(b),
-      receipt: receiptMessage(b),
+      receipt: receiptMessage(b, { itemised: !receiptPng }),
     }),
   )
   if (png) form.append('image', png, tokenFileName(b))
+  if (receiptPng) form.append('receiptImage', receiptPng, receiptFileName(b))
 
   let status: 'sent' | 'demo' | 'failed' = 'failed'
   try {
@@ -34,4 +35,18 @@ export async function sendBookingToWhatsApp(b: Booking, png: Blob | null) {
   }
   useDb.getState().updateBooking(b.id, { whatsapp: { status, at: new Date().toISOString() } })
   return status
+}
+
+/** Sends one receipt image + caption (e.g. a package purchase) to a WhatsApp number. */
+export async function sendReceiptToWhatsApp(input: { to: string; name: string; reference: string; total: string; caption: string }, png: Blob | null, fileName: string) {
+  const form = new FormData()
+  form.append('payload', JSON.stringify(input))
+  if (png) form.append('image', png, fileName)
+  try {
+    const res = await fetch(`${import.meta.env.NEXT_PUBLIC_API_URL}/notify/receipt`, { method: 'POST', body: form })
+    const data = (await res.json()) as { status?: 'sent' | 'demo' }
+    return res.ok && (data.status === 'sent' || data.status === 'demo') ? data.status : 'failed'
+  } catch {
+    return 'failed'
+  }
 }
